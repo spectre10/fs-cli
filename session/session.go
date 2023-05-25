@@ -1,11 +1,13 @@
 package session
 
-import "github.com/pion/webrtc/v3"
-import "sync"
-import "fmt"
-
-import "github.com/spectre10/fileshare-cli/lib"
-import "github.com/spectre10/fileshare-cli/http"
+import (
+	"fmt"
+	"github.com/pion/webrtc/v3"
+	"strings"
+	"sync"
+	// "github.com/spectre10/fileshare-cli/http"
+	"github.com/spectre10/fileshare-cli/lib"
+)
 
 type Session struct {
 	peerConnection *webrtc.PeerConnection
@@ -135,16 +137,23 @@ func (s *Session) Connect() error {
 		return err
 	}
 
-	sdpchan := http.HTTPSDPServer()
+	// sdpchan := http.HTTPSDPServer()
+
 	err = s.Createoffer()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(`Please, provide the SDP via: curl localhost:8080/sdp --data "$SDP"`)
+	fmt.Println("Paste the remote SDP: ")
+
+	var text string
+	fmt.Scanln(&text)
+	text = strings.TrimSpace(text)
+	sdp := text
+
 	answer := webrtc.SessionDescription{}
 	for {
-		if err := lib.Decode(<-sdpchan, &answer); err == nil {
+		if err := lib.Decode(sdp, &answer); err == nil {
 			break
 		}
 		fmt.Println("Invalid SDP.")
