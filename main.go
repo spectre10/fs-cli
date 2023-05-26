@@ -1,10 +1,11 @@
+/*
+Copyright © 2023 NAME HERE <EMAIL ADDRESS>
+
+*/
 package main
 
-import (
-	"github.com/spectre10/fileshare-cli/session"
-)
+import "github.com/spectre10/fileshare-cli/cmd"
 
 func main() {
-	sess := session.NewSession()
-	sess.Connect()
+	cmd.Execute()
 }

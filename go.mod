@@ -2,11 +2,15 @@ module github.com/spectre10/fileshare-cli
 
 go 1.20
 
-require github.com/pion/webrtc/v3 v3.2.5
+require (
+	github.com/pion/webrtc/v3 v3.2.5
+	github.com/spf13/cobra v1.7.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/pion/datachannel v1.5.5 // indirect
 	github.com/pion/dtls/v2 v2.2.7 // indirect
 	github.com/pion/ice/v2 v2.3.4 // indirect
@@ -23,6 +27,7 @@ require (
 	github.com/pion/transport/v2 v2.2.1 // indirect
 	github.com/pion/turn/v2 v2.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.3 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect

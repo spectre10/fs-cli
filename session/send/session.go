@@ -1,4 +1,4 @@
-package session
+package send
 
 import (
 	"fmt"
@@ -43,50 +43,6 @@ func (s *Session) CreateConnection() error {
 	s.peerConnection = peerConnection
 	s.HandleState()
 	return nil
-}
-
-func (s *Session) HandleState() {
-	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
-		fmt.Printf("ICE Connection State has changed: %s\n", state.String())
-		if state == webrtc.ICEConnectionStateDisconnected {
-			s.disconnected <- struct{}{}
-		} else if state == webrtc.ICEConnectionStateFailed {
-			s.done <- struct{}{}
-		}
-	})
-}
-
-func (s *Session) Handleopen() func() {
-	return func() {
-		fmt.Println("Channel opened!")
-		fmt.Println("sending message..")
-		err := s.dataChannel.SendText("Hello")
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-func (s *Session) Close(closehandler bool) {
-	if closehandler == false {
-		s.dataChannel.Close()
-	}
-
-	s.doneCheckLock.Lock()
-	if s.doneCheck == true {
-		s.doneCheckLock.Unlock()
-		return
-	}
-	s.doneCheck = true
-	s.doneCheckLock.Unlock()
-
-	close(s.done)
-}
-
-func (s *Session) Handleclose() func() {
-	return func() {
-		s.Close(true)
-	}
 }
 
 func (s *Session) CreateChannel() error {
@@ -167,10 +123,6 @@ func (s *Session) Connect() error {
 	<-s.done
 
 	return nil
-}
-
-func HandleError(err error) {
-	panic(err)
 }
 
 func log(msg string) {
