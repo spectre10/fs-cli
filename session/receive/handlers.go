@@ -12,10 +12,10 @@ func (s *Session) HandleState() {
 		fmt.Println()
 		fmt.Printf("ICE Connection State has changed: %s\n", state.String())
 		fmt.Println()
-		s.state = &state
-		if state == webrtc.ICEConnectionStateFailed {
-			s.done <- struct{}{}
-		}
+		// s.state = &state
+		// if state == webrtc.ICEConnectionStateFailed {
+		// 	s.done <- struct{}{}
+		// }
 	})
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		dc.OnOpen(func() {

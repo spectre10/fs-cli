@@ -3,6 +3,11 @@ package lib
 import (
 	"encoding/base64"
 	"encoding/json"
+    "bufio"
+    "os"
+    "io"
+    "fmt"
+    "strings"
 )
 
 func Encode(obj interface{}) (string, error) {
@@ -21,4 +26,25 @@ func Decode(in string, obj interface{}) error {
 	}
 
 	return json.Unmarshal(b, obj)
+}
+func MustReadStdin() (string, error) {
+	r := bufio.NewReader(os.Stdin)
+
+	var in string
+	for {
+		var err error
+		in, err = r.ReadString('\n')
+		if err != io.EOF {
+			if err != nil {
+				return "", err
+			}
+		}
+		in = strings.TrimSpace(in)
+		if len(in) > 0 {
+			break
+		}
+	}
+
+	fmt.Println("")
+	return in, nil
 }

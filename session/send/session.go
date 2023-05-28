@@ -3,7 +3,7 @@ package send
 import (
 	"fmt"
 	"github.com/pion/webrtc/v3"
-	"strings"
+	// "strings"
 	"sync"
 	// "github.com/spectre10/fileshare-cli/http"
 	"github.com/spectre10/fileshare-cli/lib"
@@ -13,8 +13,8 @@ type Session struct {
 	peerConnection *webrtc.PeerConnection
 	dataChannel    *webrtc.DataChannel
 
-	done         chan struct{}
-	disconnected chan struct{}
+	done       chan struct{}
+	gatherDone <-chan struct{}
 
 	doneCheckLock sync.Mutex
 	doneCheck     bool
@@ -22,10 +22,63 @@ type Session struct {
 
 func NewSession() *Session {
 	return &Session{
-		done:         make(chan struct{}),
-		disconnected: make(chan struct{}),
-		doneCheck:    false,
+		done: make(chan struct{}),
+		// gatherDone: make(chan struct{}),
+		doneCheck: false,
 	}
+}
+
+func (s *Session) Connect() error {
+	err := s.CreateConnection()
+	if err != nil {
+		return err
+	}
+	err = s.CreateChannel()
+	if err != nil {
+		return err
+	}
+
+	// sdp := http.HTTPSDPServer()
+
+	err = s.Createoffer()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Paste the remote SDP: ")
+
+	var text string
+	// fmt.Scanln(&text)
+	// text = strings.TrimSpace(text)
+	// sdp := text
+
+	answer := webrtc.SessionDescription{}
+	for {
+		text, err = lib.MustReadStdin()
+		if err != nil {
+			return err
+		}
+		// fmt.Scanln(&text)
+		// text = strings.TrimSpace(text)
+		sdp := text
+		if err := lib.Decode(sdp, &answer); err == nil {
+			break
+		}
+		fmt.Println("Invalid SDP. Enter again.")
+	}
+
+	err = s.peerConnection.SetRemoteDescription(answer)
+	if err != nil {
+		return err
+	}
+
+	<-s.done
+
+	return nil
+}
+
+func log(msg string) {
+	fmt.Println(msg)
 }
 
 func (s *Session) CreateConnection() error {
@@ -69,65 +122,18 @@ func (s *Session) Createoffer() error {
 	if err != nil {
 		return err
 	}
-
+    s.gatherDone = webrtc.GatheringCompletePromise(s.peerConnection)
 	err = s.peerConnection.SetLocalDescription(offer)
+    <-s.gatherDone
+    offer2:=s.peerConnection.LocalDescription()
 	if err != nil {
 		return err
 	}
 
-	encoded, err := lib.Encode(offer)
+	encoded, err := lib.Encode(offer2)
 	if err != nil {
 		return err
 	}
 	fmt.Println(encoded)
 	return nil
-}
-
-func (s *Session) Connect() error {
-	err := s.CreateConnection()
-	if err != nil {
-		return err
-	}
-	err = s.CreateChannel()
-	if err != nil {
-		return err
-	}
-
-	// sdpchan := http.HTTPSDPServer()
-
-	err = s.Createoffer()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Paste the remote SDP: ")
-
-	var text string
-	// fmt.Scanln(&text)
-	// text = strings.TrimSpace(text)
-	// sdp := text
-
-	answer := webrtc.SessionDescription{}
-	for {
-		fmt.Scanln(&text)
-		text = strings.TrimSpace(text)
-		sdp := text
-		if err := lib.Decode(sdp, &answer); err == nil {
-			break
-		}
-		fmt.Println("Invalid SDP. Enter again.")
-	}
-
-	err = s.peerConnection.SetRemoteDescription(answer)
-	if err != nil {
-		return err
-	}
-
-	<-s.done
-
-	return nil
-}
-
-func log(msg string) {
-	fmt.Println(msg)
 }

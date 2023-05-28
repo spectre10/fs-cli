@@ -10,11 +10,12 @@ func (s *Session) HandleState() {
         fmt.Println()
 		fmt.Printf("ICE Connection State has changed: %s\n", state.String())
         fmt.Println()
-		if state == webrtc.ICEConnectionStateDisconnected {
-			s.disconnected <- struct{}{}
-		} else if state == webrtc.ICEConnectionStateFailed {
-			s.done <- struct{}{}
-		}
+		// if state == webrtc.ICEConnectionStateDisconnected {
+			// s.disconnected <- struct{}{}
+		// } 
+  //       else if state == webrtc.ICEConnectionStateFailed {
+		// 	s.done <- struct{}{}
+		// }
 	})
 }
 
