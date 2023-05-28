@@ -103,16 +103,19 @@ func (s *Session) Connect() error {
 	fmt.Println("Paste the remote SDP: ")
 
 	var text string
-	fmt.Scanln(&text)
-	text = strings.TrimSpace(text)
-	sdp := text
+	// fmt.Scanln(&text)
+	// text = strings.TrimSpace(text)
+	// sdp := text
 
 	answer := webrtc.SessionDescription{}
 	for {
+		fmt.Scanln(&text)
+		text = strings.TrimSpace(text)
+		sdp := text
 		if err := lib.Decode(sdp, &answer); err == nil {
 			break
 		}
-		fmt.Println("Invalid SDP.")
+		fmt.Println("Invalid SDP. Enter again.")
 	}
 
 	err = s.peerConnection.SetRemoteDescription(answer)
