@@ -7,7 +7,9 @@ import (
 
 func (s *Session) HandleState() {
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
+        fmt.Println()
 		fmt.Printf("ICE Connection State has changed: %s\n", state.String())
+        fmt.Println()
 		if state == webrtc.ICEConnectionStateDisconnected {
 			s.disconnected <- struct{}{}
 		} else if state == webrtc.ICEConnectionStateFailed {

@@ -46,11 +46,11 @@ func (s *Session) CreateConnection() error {
 }
 
 func (s *Session) CreateChannel() error {
-	// ordered := true
-	// mplt := uint16(5000)
+	ordered := true
+	mplt := uint16(5000)
 	channel, err := s.peerConnection.CreateDataChannel("data", &webrtc.DataChannelInit{
-		// Ordered:           &ordered,
-		// MaxPacketLifeTime: &mplt,
+		Ordered:           &ordered,
+		MaxPacketLifeTime: &mplt,
 	})
 	if err != nil {
 		return err
