@@ -5,6 +5,9 @@ package cmd
 
 import (
 	// "fmt"
+	"fmt"
+	"os"
+
 	"github.com/spectre10/fileshare-cli/session/send"
 	"github.com/spf13/cobra"
 )
@@ -20,11 +23,20 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		sess := send.NewSession()
-		err := sess.Connect()
-        if err!=nil {
-            panic(err)
-        }
+		path, _ := cmd.Flags().GetString("foo")
+		if path == "" {
+            fmt.Println("Missing file path")
+            return
+		}
+		file, err := os.Open(path)
+		if err != nil {
+			panic(err)
+		}
+		sess := send.NewSession(file)
+		err = sess.Connect()
+		if err != nil {
+			panic(err)
+		}
 	},
 }
 

@@ -2,6 +2,7 @@ package receive
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/pion/webrtc/v3"
@@ -9,15 +10,19 @@ import (
 )
 
 type Session struct {
+	writer         io.Writer
 	peerConnection *webrtc.PeerConnection
 	gatherDone     <-chan struct{}
 	state          *webrtc.ICEConnectionState
 	done           chan struct{}
+	msgChan        chan []byte
 }
 
-func NewSession() *Session {
+func NewSession(file io.Writer) *Session {
 	return &Session{
-		done: make(chan struct{}),
+		done:    make(chan struct{}),
+		writer:  file,
+		msgChan: make(chan []byte),
 	}
 }
 
@@ -76,6 +81,17 @@ func (s *Session) Connect() error {
 		panic(err)
 	}
 	fmt.Println(sdp)
-	<-s.done
-	return nil
+
+	for {
+		select {
+		case <-s.done:
+			return nil
+		case msg := <-s.msgChan:
+			if _, err := s.writer.Write(msg); err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
+	// <-s.done
+	// return nil
 }

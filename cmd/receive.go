@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spectre10/fileshare-cli/session/receive"
 	"github.com/spf13/cobra"
@@ -22,11 +23,22 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Paste the SDP:")
-		sess := receive.NewSession()
-        err:=sess.Connect()
-        if err!=nil {
-            panic(err)
-        }
+		name, _ := cmd.Flags().GetString("file")
+		if name == "" {
+			fmt.Println("Enter a filename")
+			return
+		}
+		file, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		sess := receive.NewSession(file)
+		err = sess.Connect()
+		if err != nil {
+			panic(err)
+		}
 	},
 }
 
@@ -37,7 +49,7 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// receiveCmd.PersistentFlags().String("foo", "", "A help for foo")
+	receiveCmd.PersistentFlags().String("file", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:

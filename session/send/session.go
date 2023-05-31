@@ -2,29 +2,37 @@ package send
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/pion/webrtc/v3"
+
 	// "strings"
-	"sync"
+	// "sync"
 	// "github.com/spectre10/fileshare-cli/http"
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
-type Session struct {
-	peerConnection *webrtc.PeerConnection
+type Session struct { peerConnection *webrtc.PeerConnection
 	dataChannel    *webrtc.DataChannel
 
 	done       chan struct{}
 	gatherDone <-chan struct{}
+	stop       chan struct{}
 
-	doneCheckLock sync.Mutex
-	doneCheck     bool
+	data   []byte
+	reader io.Reader
+	// doneCheckLock sync.Mutex
+	// doneCheck     bool
 }
 
-func NewSession() *Session {
+func NewSession(r io.Reader) *Session {
 	return &Session{
-		done: make(chan struct{}),
+		done:   make(chan struct{}),
+		data:   make([]byte, 4096),
+		stop:   make(chan struct{}),
+		reader: r,
 		// gatherDone: make(chan struct{}),
-		doneCheck: false,
+		// doneCheck: false,
 	}
 }
 
@@ -122,10 +130,10 @@ func (s *Session) Createoffer() error {
 	if err != nil {
 		return err
 	}
-    s.gatherDone = webrtc.GatheringCompletePromise(s.peerConnection)
+	s.gatherDone = webrtc.GatheringCompletePromise(s.peerConnection)
 	err = s.peerConnection.SetLocalDescription(offer)
-    <-s.gatherDone
-    offer2:=s.peerConnection.LocalDescription()
+	<-s.gatherDone
+	offer2 := s.peerConnection.LocalDescription()
 	if err != nil {
 		return err
 	}
