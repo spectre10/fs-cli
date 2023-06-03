@@ -3,8 +3,10 @@ package send
 import (
 	"fmt"
 	"io"
-	"github.com/pion/webrtc/v3"
+	"os"
 	"sync"
+
+	"github.com/pion/webrtc/v3"
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
@@ -19,16 +21,30 @@ type Session struct {
 	data   []byte
 	reader io.Reader
 
+	path string
+	size int64
+
 	isClosedMut sync.Mutex
 	isClosed    bool
 }
 
-func NewSession(r io.Reader) *Session {
+func NewSession(path string) *Session {
+	file, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	f, err := os.Stat(path)
+	if err != nil {
+		panic(err)
+	}
+	sz := f.Size()
 	return &Session{
 		done:   make(chan struct{}),
 		data:   make([]byte, 4096),
 		stop:   make(chan struct{}),
-		reader: r,
+		reader: file,
+		path:   path,
+		size:   sz,
 		// gatherDone: make(chan struct{}),
 		// doneCheck: false,
 	}
@@ -118,7 +134,11 @@ func (s *Session) CreateChannel() error {
 	s.dataChannel.OnOpen(s.Handleopen())
 	s.dataChannel.OnClose(s.Handleclose())
 	s.dataChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
-		fmt.Println("message arrived: ", string(msg.Data))
+		signal := string(msg.Data)
+		if signal == "Completed" {
+			s.Close(false)
+			s.stop <- struct{}{}
+		}
 	})
 	return nil
 }

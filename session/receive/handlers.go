@@ -2,10 +2,12 @@ package receive
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/pion/webrtc/v3"
 )
 
-var Msgchan chan []byte
+// var Msgchan chan []byte
 
 func (s *Session) HandleState() {
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
@@ -15,6 +17,7 @@ func (s *Session) HandleState() {
 		}
 	})
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
+		s.dataChannel = dc
 		dc.OnOpen(func() {
 			fmt.Printf("New Data Channel Opened! '%s' - '%d'\n", dc.Label(), dc.ID())
 		})
@@ -23,7 +26,16 @@ func (s *Session) HandleState() {
 			s.close(true)
 		})
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
-			s.msgChan <- msg.Data
+			if !s.sizeDone {
+				msgstr, err := strconv.Atoi(string(msg.Data))
+				if err != nil {
+					panic(err)
+				}
+				s.size = uint64(msgstr)
+				s.sizeDone = true
+			} else {
+				s.msgChan <- msg.Data
+			}
 		})
 	})
 }

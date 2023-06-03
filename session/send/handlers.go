@@ -20,6 +20,8 @@ func (s *Session) Handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
 		fmt.Println("sending message..")
+		s.dataChannel.SendText(fmt.Sprint(s.size))
+        
 		for {
 			select {
 			case <-s.stop:
@@ -28,7 +30,7 @@ func (s *Session) Handleopen() func() {
 				err := s.SendPacket()
 				if err != nil {
 					if err == io.EOF {
-						s.stop <- struct{}{}
+						// s.stop <- struct{}{}
 					} else {
 						panic(err)
 					}
@@ -41,7 +43,7 @@ func (s *Session) Handleopen() func() {
 func (s *Session) SendPacket() error {
 	n, err := s.reader.Read(s.data)
 	if err != nil {
-		s.Close(false)
+		// s.Close(false)
 		return err
 	}
 	s.data = s.data[:n]
@@ -63,7 +65,7 @@ func (s *Session) Close(closehandler bool) {
 		s.dataChannel.Close()
 	}
 	fmt.Println("Channel Closed!")
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(2000 * time.Millisecond)
 	s.isClosed = true
 	s.isClosedMut.Unlock()
 
