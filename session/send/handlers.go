@@ -13,12 +13,6 @@ func (s *Session) HandleState() {
 		fmt.Println()
 		fmt.Printf("ICE Connection State has changed: %s\n", state.String())
 		fmt.Println()
-		// if state == webrtc.ICEConnectionStateDisconnected {
-		// s.disconnected <- struct{}{}
-		// }
-		//       else if state == webrtc.ICEConnectionStateFailed {
-		// 	s.done <- struct{}{}
-		// }
 	})
 }
 
@@ -26,6 +20,8 @@ func (s *Session) Handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
 		fmt.Println("sending message..")
+		s.dataChannel.SendText(fmt.Sprint(s.size))
+        
 		for {
 			select {
 			case <-s.stop:
@@ -34,8 +30,7 @@ func (s *Session) Handleopen() func() {
 				err := s.SendPacket()
 				if err != nil {
 					if err == io.EOF {
-						s.stop <- struct{}{}
-						// return
+						// s.stop <- struct{}{}
 					} else {
 						panic(err)
 					}
@@ -48,7 +43,7 @@ func (s *Session) Handleopen() func() {
 func (s *Session) SendPacket() error {
 	n, err := s.reader.Read(s.data)
 	if err != nil {
-		s.Close(false)
+		// s.Close(false)
 		return err
 	}
 	s.data = s.data[:n]
@@ -61,18 +56,18 @@ func (s *Session) SendPacket() error {
 }
 
 func (s *Session) Close(closehandler bool) {
-	if closehandler == false {
-		s.dataChannel.Close()
-		fmt.Println("data channel closed")
-		time.Sleep(5 * time.Second)
+	s.isClosedMut.Lock()
+	if s.isClosed {
+		s.isClosedMut.Unlock()
+		return
 	}
-	// s.doneCheckLock.Lock()
-	// if s.doneCheck == true {
-	// s.doneCheckLock.Unlock()
-	// return
-	// }
-	// s.doneCheck = true
-	// s.doneCheckLock.Unlock()
+	if !closehandler {
+		s.dataChannel.Close()
+	}
+	fmt.Println("Channel Closed!")
+	time.Sleep(2000 * time.Millisecond)
+	s.isClosed = true
+	s.isClosedMut.Unlock()
 
 	close(s.done)
 }
