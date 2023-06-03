@@ -16,6 +16,7 @@ type Session struct {
 	state          *webrtc.ICEConnectionState
 	done           chan struct{}
 	msgChan        chan []byte
+	isChanClosed   bool
 }
 
 func NewSession(file io.Writer) *Session {

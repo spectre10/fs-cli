@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -49,7 +46,7 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	receiveCmd.PersistentFlags().String("file", "", "A help for foo")
+	receiveCmd.PersistentFlags().String("file", "", "name and path of the file")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:

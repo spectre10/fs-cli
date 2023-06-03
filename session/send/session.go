@@ -3,16 +3,13 @@ package send
 import (
 	"fmt"
 	"io"
-
 	"github.com/pion/webrtc/v3"
-
-	// "strings"
-	// "sync"
-	// "github.com/spectre10/fileshare-cli/http"
+	"sync"
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
-type Session struct { peerConnection *webrtc.PeerConnection
+type Session struct {
+	peerConnection *webrtc.PeerConnection
 	dataChannel    *webrtc.DataChannel
 
 	done       chan struct{}
@@ -21,8 +18,9 @@ type Session struct { peerConnection *webrtc.PeerConnection
 
 	data   []byte
 	reader io.Reader
-	// doneCheckLock sync.Mutex
-	// doneCheck     bool
+
+	isClosedMut sync.Mutex
+	isClosed    bool
 }
 
 func NewSession(r io.Reader) *Session {
