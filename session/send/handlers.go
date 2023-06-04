@@ -2,10 +2,10 @@ package send
 
 import (
 	"fmt"
+	"github.com/pion/webrtc/v3"
+	"github.com/pterm/pterm"
 	"io"
 	"time"
-
-	"github.com/pion/webrtc/v3"
 )
 
 func (s *Session) HandleState() {
@@ -21,16 +21,17 @@ func (s *Session) Handleopen() func() {
 		fmt.Println("Channel opened!")
 		fmt.Println("sending message..")
 		s.dataChannel.SendText(fmt.Sprint(s.size))
-        
+		area, _ := pterm.DefaultArea.Start()
 		for {
 			select {
 			case <-s.stop:
 				return
 			default:
-				err := s.SendPacket()
+				err := s.SendPacket(area)
 				if err != nil {
 					if err == io.EOF {
 						// s.stop <- struct{}{}
+						area.Stop()
 					} else {
 						panic(err)
 					}
@@ -40,7 +41,7 @@ func (s *Session) Handleopen() func() {
 	}
 }
 
-func (s *Session) SendPacket() error {
+func (s *Session) SendPacket(area *pterm.AreaPrinter) error {
 	n, err := s.reader.Read(s.data)
 	if err != nil {
 		// s.Close(false)
@@ -52,6 +53,9 @@ func (s *Session) SendPacket() error {
 	if err != nil {
 		return err
 	}
+	stats, _ := s.peerConnection.GetStats().GetDataChannelStats(s.dataChannel)
+	area.Update(pterm.Sprintf("%f/%f MBs sent", float32(stats.BytesSent)/1000000, float32(s.size)/1000000))
+
 	return nil
 }
 
@@ -65,7 +69,7 @@ func (s *Session) Close(closehandler bool) {
 		s.dataChannel.Close()
 	}
 	fmt.Println("Channel Closed!")
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	s.isClosed = true
 	s.isClosedMut.Unlock()
 

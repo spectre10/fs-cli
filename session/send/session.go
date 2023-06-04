@@ -22,7 +22,7 @@ type Session struct {
 	reader io.Reader
 
 	path string
-	size int64
+	size uint64
 
 	isClosedMut sync.Mutex
 	isClosed    bool
@@ -39,12 +39,12 @@ func NewSession(path string) *Session {
 	}
 	sz := f.Size()
 	return &Session{
-		done:   make(chan struct{}),
-		data:   make([]byte, 4096),
-		stop:   make(chan struct{}),
-		reader: file,
-		path:   path,
-		size:   sz,
+		done:      make(chan struct{}),
+		data:      make([]byte, 4096),
+		stop:      make(chan struct{}),
+		reader:    file,
+		path:      path,
+		size:      uint64(sz),
 		// gatherDone: make(chan struct{}),
 		// doneCheck: false,
 	}

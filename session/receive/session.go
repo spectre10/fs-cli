@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pion/webrtc/v3"
+	"github.com/pterm/pterm"
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
@@ -29,11 +30,13 @@ type Session struct {
 
 func NewSession(file io.Writer) *Session {
 	return &Session{
-		done:     make(chan struct{}),
-		writer:   file,
-		msgChan:  make(chan []byte),
-		size:     0,
-		sizeDone: false,
+		done:          make(chan struct{}),
+		writer:        file,
+		msgChan:       make(chan []byte),
+		isChanClosed:  false,
+		size:          0,
+		sizeDone:      false,
+		receivedBytes: 0,
 	}
 }
 
@@ -92,13 +95,15 @@ func (s *Session) Connect() error {
 		panic(err)
 	}
 	fmt.Println(sdp)
-
+	area, _ := pterm.DefaultArea.Start()
 	for {
 		select {
 		case <-s.done:
+			area.Stop()
 			return nil
 		case msg := <-s.msgChan:
 			s.receivedBytes += uint64(len(msg))
+			area.Update(pterm.Sprintf("%f/%f MBs received", float32(s.receivedBytes)/1000000, float32(s.size)/1000000))
 			if _, err := s.writer.Write(msg); err != nil {
 				fmt.Println(err)
 			}

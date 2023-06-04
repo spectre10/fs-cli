@@ -12,7 +12,7 @@ import (
 func (s *Session) HandleState() {
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
 		fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
-		if state == webrtc.ICEConnectionStateFailed {
+		if state == webrtc.ICEConnectionStateDisconnected {
 			s.done <- struct{}{}
 		}
 	})
@@ -36,6 +36,7 @@ func (s *Session) HandleState() {
 			} else {
 				s.msgChan <- msg.Data
 			}
+
 		})
 	})
 }
