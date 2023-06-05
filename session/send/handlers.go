@@ -10,9 +10,7 @@ import (
 
 func (s *Session) HandleState() {
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
-		fmt.Println()
-		fmt.Printf("ICE Connection State has changed: %s\n", state.String())
-		fmt.Println()
+		fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 	})
 }
 
@@ -54,7 +52,7 @@ func (s *Session) SendPacket(area *pterm.AreaPrinter) error {
 		return err
 	}
 	stats, _ := s.peerConnection.GetStats().GetDataChannelStats(s.dataChannel)
-	area.Update(pterm.Sprintf("%f/%f MBs sent", float32(stats.BytesSent)/1000000, float32(s.size)/1000000))
+	area.Update(pterm.Sprintf("%f/%f MBs sent", float64(stats.BytesSent)/1048576, float64(s.size)/1048576))
 
 	return nil
 }

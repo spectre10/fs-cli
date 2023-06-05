@@ -103,7 +103,7 @@ func (s *Session) Connect() error {
 			return nil
 		case msg := <-s.msgChan:
 			s.receivedBytes += uint64(len(msg))
-			area.Update(pterm.Sprintf("%f/%f MBs received", float32(s.receivedBytes)/1000000, float32(s.size)/1000000))
+			area.Update(pterm.Sprintf("%f/%f MBs received", float64(s.receivedBytes)/1048576, float64(s.size)/1048576))
 			if _, err := s.writer.Write(msg); err != nil {
 				fmt.Println(err)
 			}
