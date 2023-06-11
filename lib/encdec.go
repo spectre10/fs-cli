@@ -1,13 +1,16 @@
 package lib
 
 import (
+	"bufio"
+	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
-    "bufio"
-    "os"
-    "io"
-    "fmt"
-    "strings"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
 func Encode(obj interface{}) (string, error) {
@@ -15,8 +18,19 @@ func Encode(obj interface{}) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	return base64.StdEncoding.EncodeToString(b), nil
+	var data bytes.Buffer
+	gz, err := gzip.NewWriterLevel(&data, gzip.BestCompression)
+	if err != nil {
+		panic(err)
+	}
+	if _, err := gz.Write([]byte(b)); err != nil {
+		panic(err)
+	}
+	if err := gz.Close(); err != nil {
+		panic(err)
+	}
+	sdp := base64.StdEncoding.EncodeToString(data.Bytes())
+	return sdp, nil
 }
 
 func Decode(in string, obj interface{}) error {
@@ -25,7 +39,17 @@ func Decode(in string, obj interface{}) error {
 		return err
 	}
 
-	return json.Unmarshal(b, obj)
+	br := bytes.NewReader(b)
+	gz, err := gzip.NewReader(br)
+	data, err := ioutil.ReadAll(gz)
+	if err != nil {
+		panic(err)
+	}
+	if err := gz.Close(); err != nil {
+		panic(err)
+	}
+
+	return json.Unmarshal(data, obj)
 }
 func MustReadStdin() (string, error) {
 	r := bufio.NewReader(os.Stdin)
