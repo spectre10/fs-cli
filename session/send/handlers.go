@@ -17,7 +17,7 @@ func (s *Session) HandleState() {
 func (s *Session) Handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
-		fmt.Println("sending message..")
+		fmt.Println("sending data..")
 		s.dataChannel.SendText(fmt.Sprint(s.size))
 		area, _ := pterm.DefaultArea.Start()
 		for {

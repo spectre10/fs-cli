@@ -39,14 +39,12 @@ func NewSession(path string) *Session {
 	}
 	sz := f.Size()
 	return &Session{
-		done:      make(chan struct{}),
-		data:      make([]byte, 4096),
-		stop:      make(chan struct{}),
-		reader:    file,
-		path:      path,
-		size:      uint64(sz),
-		// gatherDone: make(chan struct{}),
-		// doneCheck: false,
+		done:   make(chan struct{}),
+		data:   make([]byte, 4096),
+		stop:   make(chan struct{}),
+		reader: file,
+		path:   path,
+		size:   uint64(sz),
 	}
 }
 
