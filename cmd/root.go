@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 
@@ -19,7 +20,8 @@ func Execute() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 	go func() {
-		for _ = range sig {
+		for s := range sig {
+			fmt.Println(s.String())
 			os.Exit(0)
 		}
 	}()

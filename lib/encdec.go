@@ -49,7 +49,7 @@ func Decode(in string, obj interface{}) error {
 	return json.Unmarshal(data, obj)
 }
 
-func MustReadStdin() (string, error) {
+func ReadSDP() (string, error) {
 	var sdpString string
 	_, err := fmt.Scanln(&sdpString)
 	if err != nil {

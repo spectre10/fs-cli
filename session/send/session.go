@@ -58,8 +58,6 @@ func (s *Session) Connect() error {
 		return err
 	}
 
-	// sdp := http.HTTPSDPServer()
-
 	err = s.Createoffer()
 	if err != nil {
 		return err
@@ -68,18 +66,13 @@ func (s *Session) Connect() error {
 	fmt.Println("Paste the remote SDP: ")
 
 	var text string
-	// fmt.Scanln(&text)
-	// text = strings.TrimSpace(text)
-	// sdp := text
 
 	answer := webrtc.SessionDescription{}
 	for {
-		text, err = lib.MustReadStdin()
+		text, err = lib.ReadSDP()
 		if err != nil {
 			return err
 		}
-		// fmt.Scanln(&text)
-		// text = strings.TrimSpace(text)
 		sdp := text
 		if err := lib.Decode(sdp, &answer); err == nil {
 			break

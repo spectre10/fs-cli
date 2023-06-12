@@ -112,6 +112,4 @@ func (s *Session) Connect() error {
 			}
 		}
 	}
-	// <-s.done
-	// return nil
 }

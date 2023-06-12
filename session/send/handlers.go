@@ -28,7 +28,6 @@ func (s *Session) Handleopen() func() {
 				err := s.SendPacket(area)
 				if err != nil {
 					if err == io.EOF {
-						// s.stop <- struct{}{}
 						area.Stop()
 					} else {
 						panic(err)
@@ -42,7 +41,6 @@ func (s *Session) Handleopen() func() {
 func (s *Session) SendPacket(area *pterm.AreaPrinter) error {
 	n, err := s.reader.Read(s.data)
 	if err != nil {
-		// s.Close(false)
 		return err
 	}
 	s.data = s.data[:n]

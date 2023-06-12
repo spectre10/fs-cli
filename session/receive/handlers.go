@@ -7,8 +7,6 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-// var Msgchan chan []byte
-
 func (s *Session) HandleState() {
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
 		fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
