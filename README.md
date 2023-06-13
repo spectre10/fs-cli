@@ -6,23 +6,22 @@ It is peer-to-peer (P2P), so there are no servers in middle. However, Google's S
 
 This information is used to setup UDP communication between clients.
 
-
-
-
 https://github.com/spectre10/fileshare-cli/assets/72698233/86917b69-1137-4496-9f4c-3dacdccd31ae
-
-
-
-
-
 
 # Installation
 
-You need to have Go installed first. ([Install from here](https://go.dev/doc/install))
+If you have Go installed, ([Install from here](https://go.dev/doc/install))
 
-Then, run this command
+you want a stable release version, then run this command,
+
+`$ go install github.com/spectre10/fileshare-cli@v0.1.0`
+
+you want the latest git version, then run this command,
 
 `$ go install github.com/spectre10/fileshare-cli@latest`
+
+
+Alternatively, you can download from GitHub Releases.
 
 # Usage
 
