@@ -8,6 +8,10 @@ This information is used to setup UDP communication between clients.
 
 https://github.com/spectre10/fileshare-cli/assets/72698233/86917b69-1137-4496-9f4c-3dacdccd31ae
 
+## Architecture
+
+![WebRTC](https://github.com/spectre10/fileshare-cli/assets/72698233/5a13a571-51f6-400d-b534-492f9c38bc79)
+
 # Installation
 
 If you have Go installed, ([Install from here](https://go.dev/doc/install))
