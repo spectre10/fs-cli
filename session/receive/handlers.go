@@ -1,10 +1,12 @@
 package receive
 
 import (
+	"encoding/json"
 	"fmt"
-	"strconv"
+	"os"
 
 	"github.com/pion/webrtc/v3"
+	"github.com/spectre10/fileshare-cli/lib"
 )
 
 func (s *Session) HandleState() {
@@ -25,11 +27,17 @@ func (s *Session) HandleState() {
 		})
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 			if !s.sizeDone {
-				msgstr, err := strconv.Atoi(string(msg.Data))
+				var md lib.Metadata
+				err := json.Unmarshal(msg.Data, &md)
 				if err != nil {
 					panic(err)
 				}
-				s.size = uint64(msgstr)
+				s.size = md.Size
+				s.name = md.Name
+				s.file, err = os.OpenFile(s.name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+				if err != nil {
+					panic(err)
+				}
 				s.sizeDone = true
 			} else {
 				s.msgChan <- msg.Data

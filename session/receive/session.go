@@ -2,7 +2,8 @@ package receive
 
 import (
 	"fmt"
-	"io"
+	// "io"
+	"os"
 	"strings"
 
 	"github.com/pion/webrtc/v3"
@@ -11,7 +12,7 @@ import (
 )
 
 type Session struct {
-	writer         io.Writer
+	// writer         io.Writer
 	peerConnection *webrtc.PeerConnection
 	dataChannel    *webrtc.DataChannel
 
@@ -24,14 +25,15 @@ type Session struct {
 
 	size     uint64
 	sizeDone bool
+	name     string
+	file     *os.File
 
 	receivedBytes uint64
 }
 
-func NewSession(file io.Writer) *Session {
+func NewSession() *Session {
 	return &Session{
 		done:          make(chan struct{}),
-		writer:        file,
 		msgChan:       make(chan []byte),
 		isChanClosed:  false,
 		size:          0,
@@ -64,6 +66,7 @@ func (s *Session) Connect() error {
 		return err
 	}
 
+	fmt.Println("Paste the SDP:")
 	var input string
 	fmt.Scanln(&input)
 	input = strings.TrimSpace(input)
@@ -99,12 +102,13 @@ func (s *Session) Connect() error {
 	for {
 		select {
 		case <-s.done:
+			s.file.Close()
 			area.Stop()
 			return nil
 		case msg := <-s.msgChan:
 			s.receivedBytes += uint64(len(msg))
 			area.Update(pterm.Sprintf("%f/%f MBs received", float64(s.receivedBytes)/1048576, float64(s.size)/1048576))
-			if _, err := s.writer.Write(msg); err != nil {
+			if _, err := s.file.Write(msg); err != nil {
 				fmt.Println(err)
 			}
 			if s.receivedBytes == s.size {

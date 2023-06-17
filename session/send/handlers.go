@@ -1,11 +1,14 @@
 package send
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/pion/webrtc/v3"
-	"github.com/pterm/pterm"
 	"io"
 	"time"
+
+	"github.com/pion/webrtc/v3"
+	"github.com/pterm/pterm"
+	"github.com/spectre10/fileshare-cli/lib"
 )
 
 func (s *Session) HandleState() {
@@ -18,7 +21,16 @@ func (s *Session) Handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
 		fmt.Println("sending data..")
-		s.dataChannel.SendText(fmt.Sprint(s.size))
+
+		var info lib.Metadata
+		info.Size = s.size
+		info.Name = s.name
+		md,err:=json.Marshal(info)
+		if err!=nil {
+			panic(err)
+		}
+		s.dataChannel.Send(md)
+
 		area, _ := pterm.DefaultArea.Start()
 		for {
 			select {
