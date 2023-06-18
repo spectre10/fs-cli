@@ -16,14 +16,17 @@ https://github.com/spectre10/fileshare-cli/assets/72698233/86917b69-1137-4496-9f
 
 If you have Go installed, ([Install from here](https://go.dev/doc/install))
 
-you want a stable release version, then run this command,
+Add $GOPATH/bin to your $PATH. And then,
 
-`$ go install github.com/spectre10/fileshare-cli@v0.1.0`
-
-you want the latest git version, then run this command,
+if you want the latest release version, then run this command,
 
 `$ go install github.com/spectre10/fileshare-cli@latest`
 
+or
+
+if you want a specific release version, then run this command,
+
+`$ go install github.com/spectre10/fileshare-cli@vX.X.X`
 
 Alternatively, you can download from GitHub Releases.
 

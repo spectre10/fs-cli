@@ -21,7 +21,6 @@ type Session struct {
 	data   []byte
 	reader io.Reader
 
-	path string
 	size uint64
 	name string
 
@@ -43,7 +42,6 @@ func NewSession(path string) *Session {
 		data:   make([]byte, 4*4096),
 		stop:   make(chan struct{}),
 		reader: file,
-		path:   path,
 		size:   uint64(f.Size()),
 		name:   f.Name(),
 	}

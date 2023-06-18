@@ -17,5 +17,16 @@ release:
 universal_binaries:
   - replace: true
 
+# brews:
+#   - 
+#     name: fileshare-cli
+#     homepage: https://github.com/spectre10/fileshare-cli
+#     tap:
+#       owner: spectre10
+#       name: homebrew-tap
+#     commit_author:
+#       name: spectre10
+#       email: shyamthakkar001@gmail.com
+
 checksum:
   name_template: 'checksums.txt'

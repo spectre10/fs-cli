@@ -2,7 +2,6 @@ package receive
 
 import (
 	"fmt"
-	// "io"
 	"os"
 	"strings"
 
@@ -98,18 +97,27 @@ func (s *Session) Connect() error {
 		panic(err)
 	}
 	fmt.Println(sdp)
+
 	area, _ := pterm.DefaultArea.Start()
+	err_chan := make(chan error)
+	go s.fileWrite(area, err_chan)
+
+	return <-err_chan
+}
+
+func (s *Session) fileWrite(area *pterm.AreaPrinter, err_chan chan error) {
 	for {
 		select {
 		case <-s.done:
 			s.file.Close()
 			area.Stop()
-			return nil
+			err_chan <- nil
+			return
 		case msg := <-s.msgChan:
 			s.receivedBytes += uint64(len(msg))
 			area.Update(pterm.Sprintf("%f/%f MBs received", float64(s.receivedBytes)/1048576, float64(s.size)/1048576))
 			if _, err := s.file.Write(msg); err != nil {
-				fmt.Println(err)
+				err_chan <- err
 			}
 			if s.receivedBytes == s.size {
 				s.dataChannel.SendText("Completed")
