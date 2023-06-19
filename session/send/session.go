@@ -11,8 +11,9 @@ import (
 )
 
 type Session struct {
-	peerConnection *webrtc.PeerConnection
-	dataChannel    *webrtc.DataChannel
+	peerConnection  *webrtc.PeerConnection
+	dataChannel     *webrtc.DataChannel
+	bufferThreshold uint64
 
 	done       chan struct{}
 	gatherDone <-chan struct{}
@@ -38,12 +39,13 @@ func NewSession(path string) *Session {
 		panic(err)
 	}
 	return &Session{
-		done:   make(chan struct{}),
-		data:   make([]byte, 4*4096),
-		stop:   make(chan struct{}),
-		reader: file,
-		size:   uint64(f.Size()),
-		name:   f.Name(),
+		done:            make(chan struct{}),
+		data:            make([]byte, 4*4096),
+		bufferThreshold: 1024 * 1024,
+		stop:            make(chan struct{}),
+		reader:          file,
+		size:            uint64(f.Size()),
+		name:            f.Name(),
 	}
 }
 

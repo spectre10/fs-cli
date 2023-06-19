@@ -22,7 +22,7 @@ func (s *Session) HandleState() {
 			fmt.Printf("New Data Channel Opened! '%s' - '%d'\n", dc.Label(), dc.ID())
 		})
 		dc.OnClose(func() {
-			fmt.Println("Closed!")
+			fmt.Println("Channel Closed!")
 			s.close(true)
 		})
 		dc.OnMessage(func(msg webrtc.DataChannelMessage) {

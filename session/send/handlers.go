@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/pion/webrtc/v3"
@@ -25,27 +26,50 @@ func (s *Session) Handleopen() func() {
 		var info lib.Metadata
 		info.Size = s.size
 		info.Name = s.name
-		md,err:=json.Marshal(info)
-		if err!=nil {
+		md, err := json.Marshal(info)
+		if err != nil {
 			panic(err)
 		}
 		s.dataChannel.Send(md)
 
 		area, _ := pterm.DefaultArea.Start()
+		eof_chan := make(chan struct{})
 		for {
 			select {
-			case <-s.stop:
+			case <-eof_chan:
+				<-s.stop
 				return
 			default:
-				err := s.SendPacket(area)
-				if err != nil {
-					if err == io.EOF {
-						area.Stop()
-					} else {
-						panic(err)
+				if s.dataChannel.BufferedAmount() < s.bufferThreshold {
+					err := s.SendPacket(area)
+					if err != nil {
+						if err == io.EOF {
+							area.Stop()
+							eof_chan <- struct{}{}
+						} else {
+							panic(err)
+						}
 					}
 				}
 			}
+		}
+	}
+}
+
+// not used currently
+func (s *Session) statWrite(area *pterm.AreaPrinter, wg *sync.WaitGroup) {
+	var prev uint64 = s.dataChannel.BufferedAmount()
+	var total uint64 = 0
+	for {
+		select {
+		case <-s.stop:
+			return
+		default:
+			if s.dataChannel.BufferedAmount() < prev {
+				total += (prev - s.dataChannel.BufferedAmount())
+				area.Update(pterm.Sprintf("%d", total))
+			}
+			prev = s.dataChannel.BufferedAmount()
 		}
 	}
 }
