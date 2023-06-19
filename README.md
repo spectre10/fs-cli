@@ -6,7 +6,8 @@ It is peer-to-peer (P2P), so there are no servers in middle. However, Google's S
 
 This information is used to setup Data Channel between clients.
 
-https://github.com/spectre10/fileshare-cli/assets/72698233/86917b69-1137-4496-9f4c-3dacdccd31ae
+https://github.com/spectre10/fileshare-cli/assets/72698233/db208f9d-7b94-4e58-9665-0a05e25e9b94
+
 
 ## Architecture
 
@@ -28,7 +29,9 @@ if you want a specific release version, then run this command,
 
 `$ go install github.com/spectre10/fileshare-cli@vX.X.X`
 
-Alternatively, you can download from GitHub Releases.
+***
+
+Alternatively, you can also download from GitHub Releases.
 
 # Usage
 
@@ -36,4 +39,7 @@ To send a file,
 `$ fileshare-cli send --file <filepath>`
 
 To receive a file,
-`$ fileshare-cli receive --file <filepath>`
+`$ fileshare-cli receive`
+
+-----------------------------------
+Currently only tested on Linux.
