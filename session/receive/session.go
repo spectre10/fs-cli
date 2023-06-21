@@ -19,6 +19,7 @@ type Session struct {
 	state      *webrtc.ICEConnectionState
 	done       chan struct{}
 
+	consentChan  chan struct{}
 	msgChan      chan []byte
 	isChanClosed bool
 
@@ -34,6 +35,7 @@ func NewSession() *Session {
 	return &Session{
 		done:          make(chan struct{}),
 		msgChan:       make(chan []byte),
+		consentChan:   make(chan struct{}),
 		isChanClosed:  false,
 		size:          0,
 		sizeDone:      false,
@@ -97,6 +99,8 @@ func (s *Session) Connect() error {
 		panic(err)
 	}
 	fmt.Println(sdp)
+
+	<-s.consentChan
 
 	area, _ := pterm.DefaultArea.Start()
 	err_chan := make(chan error)

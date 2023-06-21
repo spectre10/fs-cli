@@ -27,6 +27,9 @@ type Session struct {
 
 	isClosedMut sync.Mutex
 	isClosed    bool
+
+	consent     chan bool
+	consentDone bool
 }
 
 func NewSession(path string) *Session {
@@ -34,7 +37,7 @@ func NewSession(path string) *Session {
 	if err != nil {
 		panic(err)
 	}
-	f, err := os.Stat(path)
+	f, err := file.Stat()
 	if err != nil {
 		panic(err)
 	}
@@ -46,6 +49,8 @@ func NewSession(path string) *Session {
 		reader:          file,
 		size:            uint64(f.Size()),
 		name:            f.Name(),
+		consent:         make(chan bool),
+		consentDone:     false,
 	}
 }
 
@@ -126,6 +131,16 @@ func (s *Session) CreateChannel() error {
 	s.dataChannel.OnOpen(s.Handleopen())
 	s.dataChannel.OnClose(s.Handleclose())
 	s.dataChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
+		if s.consentDone == false {
+			if string(msg.Data) == "n" {
+				s.consent <- false
+				s.consentDone = true
+				return
+			}
+			s.consent <- true
+			s.consentDone = true
+			return
+		}
 		signal := string(msg.Data)
 		if signal == "Completed" {
 			s.Close(false)

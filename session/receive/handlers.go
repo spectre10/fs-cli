@@ -19,7 +19,7 @@ func (s *Session) HandleState() {
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		s.dataChannel = dc
 		dc.OnOpen(func() {
-			fmt.Printf("New Data Channel Opened! '%s' - '%d'\n", dc.Label(), dc.ID())
+			// fmt.Printf("New Data Channel Opened! '%s' - '%d'\n", dc.Label(), dc.ID())
 		})
 		dc.OnClose(func() {
 			fmt.Println("Channel Closed!")
@@ -36,9 +36,22 @@ func (s *Session) HandleState() {
 				s.name = md.Name
 				s.file, err = os.OpenFile(s.name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 				if err != nil {
+					fmt.Println("func: onmessage os.openfile")
 					panic(err)
 				}
 				s.sizeDone = true
+				var consent string
+				// for !(consent == "Y" || consent == "y" || consent == "N" || consent == "n") {
+				fmt.Printf("Do you want to receive '%s' ? [Y/N] ", s.name)
+				fmt.Scanln(&consent)
+				// }
+				if consent == "n" || consent == "N" {
+					s.dataChannel.SendText("n")
+				} else {
+					s.dataChannel.SendText("Y")
+					s.consentChan <- struct{}{}
+					// s.close(false)
+				}
 			} else {
 				s.msgChan <- msg.Data
 			}
@@ -48,5 +61,6 @@ func (s *Session) HandleState() {
 }
 
 func (s *Session) close(isOnClose bool) {
+	close(s.consentChan)
 	close(s.done)
 }

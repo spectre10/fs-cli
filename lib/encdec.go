@@ -38,6 +38,9 @@ func Decode(in string, obj interface{}) error {
 
 	br := bytes.NewReader(b)
 	gz, err := gzip.NewReader(br)
+	if err != nil {
+		panic(err)
+	}
 	data, err := ioutil.ReadAll(gz)
 	if err != nil {
 		panic(err)

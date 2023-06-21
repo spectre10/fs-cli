@@ -21,7 +21,6 @@ func (s *Session) HandleState() {
 func (s *Session) Handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
-		fmt.Println("sending data..")
 
 		var info lib.Metadata
 		info.Size = s.size
@@ -31,7 +30,14 @@ func (s *Session) Handleopen() func() {
 			panic(err)
 		}
 		s.dataChannel.Send(md)
-
+		fmt.Println("Waiting for receiver to accept the transfer...")
+		concentCheck := <-s.consent
+		if concentCheck == false {
+			fmt.Println("\nReceiver denied to receive.")
+			s.Close(false)
+			return
+		}
+		fmt.Println("sending data..")
 		area, _ := pterm.DefaultArea.Start()
 		eof_chan := make(chan struct{})
 		for {
