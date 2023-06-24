@@ -92,7 +92,7 @@ func (s *Session) SendPacket(area *pterm.AreaPrinter) error {
 		return err
 	}
 	stats, _ := s.peerConnection.GetStats().GetDataChannelStats(s.dataChannel)
-	area.Update(pterm.Sprintf("%f/%f MBs sent", float64(stats.BytesSent)/1048576, float64(s.size)/1048576))
+	area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(stats.BytesSent-s.dataChannel.BufferedAmount())/1048576, float64(s.size)/1048576))
 
 	return nil
 }

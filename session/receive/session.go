@@ -13,6 +13,7 @@ import (
 type Session struct {
 	// writer         io.Writer
 	peerConnection *webrtc.PeerConnection
+	control        *webrtc.DataChannel
 	dataChannel    *webrtc.DataChannel
 
 	gatherDone <-chan struct{}
@@ -119,7 +120,7 @@ func (s *Session) fileWrite(area *pterm.AreaPrinter, err_chan chan error) {
 			return
 		case msg := <-s.msgChan:
 			s.receivedBytes += uint64(len(msg))
-			area.Update(pterm.Sprintf("%f/%f MBs received", float64(s.receivedBytes)/1048576, float64(s.size)/1048576))
+			area.Update(pterm.Sprintf("%.2f/%.2f MBs received", float64(s.receivedBytes)/1048576, float64(s.size)/1048576))
 			if _, err := s.file.Write(msg); err != nil {
 				err_chan <- err
 			}

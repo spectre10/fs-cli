@@ -12,6 +12,7 @@ import (
 
 type Session struct {
 	peerConnection  *webrtc.PeerConnection
+	control         *webrtc.DataChannel
 	dataChannel     *webrtc.DataChannel
 	bufferThreshold uint64
 
@@ -120,7 +121,7 @@ func (s *Session) CreateConnection() error {
 func (s *Session) CreateChannel() error {
 	ordered := true
 	mplt := uint16(5000)
-	channel, err := s.peerConnection.CreateDataChannel("data", &webrtc.DataChannelInit{
+	channel, err := s.peerConnection.CreateDataChannel("control", &webrtc.DataChannelInit{
 		Ordered:           &ordered,
 		MaxPacketLifeTime: &mplt,
 	})
