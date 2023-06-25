@@ -20,15 +20,15 @@ If you have Go installed, ([Install from here](https://go.dev/doc/install))
 Add $GOPATH/bin to your $PATH. And then,
 
 if you want the latest release version, then run this command,
-
-`$ go install github.com/spectre10/fileshare-cli@latest`
-
+```sh
+go install github.com/spectre10/fileshare-cli@latest
+```
 or
 
 if you want a specific release version, then run this command,
-
-`$ go install github.com/spectre10/fileshare-cli@vX.X.X`
-
+```sh
+go install github.com/spectre10/fileshare-cli@vX.X.X
+```
 ***
 
 Alternatively, you can also download from GitHub Releases.
@@ -36,10 +36,14 @@ Alternatively, you can also download from GitHub Releases.
 # Usage
 
 To send a file,
-`$ fileshare-cli send --file <filepath>`
+```
+fileshare-cli send --file <filepath>
+```
 
 To receive a file,
-`$ fileshare-cli receive`
+```
+fileshare-cli receive
+```
 
 -----------------------------------
 Currently only tested on Linux.
