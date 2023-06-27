@@ -18,11 +18,13 @@ func (s *Session) HandleState() {
 	})
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		if dc.Label() == "control" {
-			// s.control = dc
-			s.dataChannel = dc
+			s.controlChannel = dc
 			s.assign(dc)
-		// } else {
-			// s.dataChannel = dc
+		} else {
+			s.transferChannel = dc
+			s.transferChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
+				s.msgChan <- msg.Data
+			})
 		}
 	})
 }
@@ -53,14 +55,15 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 			fmt.Printf("Do you want to receive '%s' ? [Y/N] ", s.name)
 			fmt.Scanln(&consent)
 			if consent == "n" || consent == "N" {
-				s.dataChannel.SendText("n")
+				s.controlChannel.SendText("n")
 			} else {
-				s.dataChannel.SendText("Y")
+				s.controlChannel.SendText("Y")
 				s.consentChan <- struct{}{}
 			}
-		} else {
-			s.msgChan <- msg.Data
 		}
+		//       else {
+		// 	s.msgChan <- msg.Data
+		// }
 
 	})
 }

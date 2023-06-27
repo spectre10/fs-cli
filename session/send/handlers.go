@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sync"
 	"time"
 
 	"github.com/pion/webrtc/v3"
@@ -29,7 +28,7 @@ func (s *Session) Handleopen() func() {
 		if err != nil {
 			panic(err)
 		}
-		s.dataChannel.Send(md)
+		s.controlChannel.Send(md)
 		fmt.Println("Waiting for receiver to accept the transfer...")
 		concentCheck := <-s.consent
 		if concentCheck == false {
@@ -37,45 +36,38 @@ func (s *Session) Handleopen() func() {
 			s.Close(false)
 			return
 		}
-		fmt.Println("sending data..")
-		area, _ := pterm.DefaultArea.Start()
-		eof_chan := make(chan struct{})
-		for {
-			select {
-			case <-eof_chan:
-				<-s.stop
-				return
-			default:
-				if s.dataChannel.BufferedAmount() < s.bufferThreshold {
-					err := s.SendPacket(area)
-					if err != nil {
-						if err == io.EOF {
-							area.Stop()
-							eof_chan <- struct{}{}
-						} else {
-							panic(err)
-						}
-					}
-				}
-			}
-		}
+		<-s.transferDone
+		go s.sendFile()
+		<-s.stop
 	}
 }
 
-// not used currently
-func (s *Session) statWrite(area *pterm.AreaPrinter, wg *sync.WaitGroup) {
-	var prev uint64 = s.dataChannel.BufferedAmount()
-	var total uint64 = 0
+func (s *Session) sendFile() {
+	fmt.Println("sending data..")
+	area, _ := pterm.DefaultArea.Start()
+	eof_chan := make(chan struct{})
 	for {
 		select {
-		case <-s.stop:
+		case <-eof_chan:
 			return
 		default:
-			if s.dataChannel.BufferedAmount() < prev {
-				total += (prev - s.dataChannel.BufferedAmount())
-				area.Update(pterm.Sprintf("%d", total))
+			if s.transferChannel.BufferedAmount() < s.bufferThreshold {
+				err := s.SendPacket(area)
+				if err != nil {
+					if err == io.EOF {
+						for {
+							area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(s.size-s.transferChannel.BufferedAmount())/1048576, float64(s.size)/1048576))
+							if s.transferChannel.BufferedAmount() == 0 {
+								break
+							}
+						}
+						area.Stop()
+						eof_chan <- struct{}{}
+					} else {
+						panic(err)
+					}
+				}
 			}
-			prev = s.dataChannel.BufferedAmount()
 		}
 	}
 }
@@ -86,13 +78,13 @@ func (s *Session) SendPacket(area *pterm.AreaPrinter) error {
 		return err
 	}
 	s.data = s.data[:n]
-	err = s.dataChannel.Send(s.data)
+	err = s.transferChannel.Send(s.data)
 	s.data = s.data[:cap(s.data)]
 	if err != nil {
 		return err
 	}
-	stats, _ := s.peerConnection.GetStats().GetDataChannelStats(s.dataChannel)
-	area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(stats.BytesSent-s.dataChannel.BufferedAmount())/1048576, float64(s.size)/1048576))
+	stats, _ := s.peerConnection.GetStats().GetDataChannelStats(s.transferChannel)
+	area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(stats.BytesSent-s.transferChannel.BufferedAmount())/1048576, float64(s.size)/1048576))
 
 	return nil
 }
@@ -104,7 +96,8 @@ func (s *Session) Close(closehandler bool) {
 		return
 	}
 	if !closehandler {
-		s.dataChannel.Close()
+		s.transferChannel.Close()
+		s.controlChannel.Close()
 	}
 	fmt.Println("Channel Closed!")
 	time.Sleep(1000 * time.Millisecond)

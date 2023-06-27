@@ -11,9 +11,14 @@ import (
 )
 
 type Session struct {
-	peerConnection  *webrtc.PeerConnection
-	control         *webrtc.DataChannel
-	dataChannel     *webrtc.DataChannel
+	peerConnection *webrtc.PeerConnection
+
+	transferChannel *webrtc.DataChannel
+	transferDone    chan struct{}
+
+	controlChannel *webrtc.DataChannel
+	controlDone    chan struct{}
+
 	bufferThreshold uint64
 
 	done       chan struct{}
@@ -46,7 +51,9 @@ func NewSession(path string) *Session {
 		done:            make(chan struct{}),
 		data:            make([]byte, 4*4096),
 		bufferThreshold: 1024 * 1024,
-		stop:            make(chan struct{}),
+		controlDone:     make(chan struct{},1),
+		transferDone:    make(chan struct{},1),
+		stop:            make(chan struct{},1),
 		reader:          file,
 		size:            uint64(f.Size()),
 		name:            f.Name(),
@@ -60,7 +67,11 @@ func (s *Session) Connect() error {
 	if err != nil {
 		return err
 	}
-	err = s.CreateChannel()
+	err = s.CreateControlChannel()
+	if err != nil {
+		return err
+	}
+	err = s.CreateTransferChannel()
 	if err != nil {
 		return err
 	}
@@ -118,7 +129,25 @@ func (s *Session) CreateConnection() error {
 	return nil
 }
 
-func (s *Session) CreateChannel() error {
+func (s *Session) CreateTransferChannel() error {
+	ordered := true
+	mplt := uint16(5000)
+	var err error
+	s.transferChannel, err = s.peerConnection.CreateDataChannel("transfer", &webrtc.DataChannelInit{
+		Ordered:           &ordered,
+		MaxPacketLifeTime: &mplt,
+	})
+	s.transferChannel.OnOpen(func() {
+		close(s.transferDone)
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+	// s.transferChannel.OnOpen()
+}
+
+func (s *Session) CreateControlChannel() error {
 	ordered := true
 	mplt := uint16(5000)
 	channel, err := s.peerConnection.CreateDataChannel("control", &webrtc.DataChannelInit{
@@ -128,10 +157,10 @@ func (s *Session) CreateChannel() error {
 	if err != nil {
 		return err
 	}
-	s.dataChannel = channel
-	s.dataChannel.OnOpen(s.Handleopen())
-	s.dataChannel.OnClose(s.Handleclose())
-	s.dataChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
+	s.controlChannel = channel
+	s.controlChannel.OnOpen(s.Handleopen())
+	s.controlChannel.OnClose(s.Handleclose())
+	s.controlChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
 		if s.consentDone == false {
 			if string(msg.Data) == "n" {
 				s.consent <- false

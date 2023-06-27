@@ -12,9 +12,9 @@ import (
 
 type Session struct {
 	// writer         io.Writer
-	peerConnection *webrtc.PeerConnection
-	control        *webrtc.DataChannel
-	dataChannel    *webrtc.DataChannel
+	peerConnection  *webrtc.PeerConnection
+	controlChannel  *webrtc.DataChannel
+	transferChannel *webrtc.DataChannel
 
 	gatherDone <-chan struct{}
 	state      *webrtc.ICEConnectionState
@@ -35,7 +35,7 @@ type Session struct {
 func NewSession() *Session {
 	return &Session{
 		done:          make(chan struct{}),
-		msgChan:       make(chan []byte),
+		msgChan:       make(chan []byte, 63),
 		consentChan:   make(chan struct{}),
 		isChanClosed:  false,
 		size:          0,
@@ -125,7 +125,7 @@ func (s *Session) fileWrite(area *pterm.AreaPrinter, err_chan chan error) {
 				err_chan <- err
 			}
 			if s.receivedBytes == s.size {
-				s.dataChannel.SendText("Completed")
+				s.controlChannel.SendText("Completed")
 			}
 		}
 	}
