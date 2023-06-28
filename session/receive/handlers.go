@@ -44,15 +44,14 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 			if err != nil {
 				panic(err)
 			}
-			s.size = md.Size
-			s.name = md.Name
-			s.file, err = os.OpenFile(s.name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			s.Metadata = &md
+			s.File, err = os.OpenFile(s.Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 			if err != nil {
 				panic(err)
 			}
 			s.sizeDone = true
 			var consent string
-			fmt.Printf("Do you want to receive '%s' ? [Y/N] ", s.name)
+			fmt.Printf("Do you want to receive '%s' ? [Y/N] ", s.Name)
 			fmt.Scanln(&consent)
 			if consent == "n" || consent == "N" {
 				s.controlChannel.SendText("n")
@@ -61,10 +60,6 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 				s.consentChan <- struct{}{}
 			}
 		}
-		//       else {
-		// 	s.msgChan <- msg.Data
-		// }
-
 	})
 }
 

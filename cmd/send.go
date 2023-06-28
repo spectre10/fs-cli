@@ -23,8 +23,8 @@ var sendCmd = &cobra.Command{
 			fmt.Println("Missing file path")
 			return
 		}
-		sess := send.NewSession(path)
-		err := sess.Connect()
+		session := send.NewSession(path)
+		err := session.Connect()
 		if err != nil {
 			panic(err)
 		}

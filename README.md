@@ -21,7 +21,7 @@ Add $GOPATH/bin to your $PATH. And then,
 
 if you want the latest release version, then run this command,
 ```sh
-go install github.com/spectre10/fileshare-cli@latest
+go install github.com/spectre10/fileshare-cli@v0.1.2
 ```
 or
 

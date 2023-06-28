@@ -8,7 +8,7 @@ import (
 
 	"github.com/pion/webrtc/v3"
 	"github.com/pterm/pterm"
-	"github.com/spectre10/fileshare-cli/lib"
+	// "github.com/spectre10/fileshare-cli/lib"
 )
 
 func (s *Session) HandleState() {
@@ -21,10 +21,10 @@ func (s *Session) Handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
 
-		var info lib.Metadata
-		info.Size = s.size
-		info.Name = s.name
-		md, err := json.Marshal(info)
+		// var info lib.Metadata
+		// info.Size = s.size
+		// info.Name = s.name
+		md, err := json.Marshal(s.Metadata)
 		if err != nil {
 			panic(err)
 		}
@@ -56,7 +56,7 @@ func (s *Session) sendFile() {
 				if err != nil {
 					if err == io.EOF {
 						for {
-							area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(s.size-s.transferChannel.BufferedAmount())/1048576, float64(s.size)/1048576))
+							area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(s.Size-s.transferChannel.BufferedAmount())/1048576, float64(s.Size)/1048576))
 							if s.transferChannel.BufferedAmount() == 0 {
 								break
 							}
@@ -73,18 +73,18 @@ func (s *Session) sendFile() {
 }
 
 func (s *Session) SendPacket(area *pterm.AreaPrinter) error {
-	n, err := s.reader.Read(s.data)
+	n, err := s.File.Read(s.Packet)
 	if err != nil {
 		return err
 	}
-	s.data = s.data[:n]
-	err = s.transferChannel.Send(s.data)
-	s.data = s.data[:cap(s.data)]
+	s.Packet = s.Packet[:n]
+	err = s.transferChannel.Send(s.Packet)
+	s.Packet = s.Packet[:cap(s.Packet)]
 	if err != nil {
 		return err
 	}
 	stats, _ := s.peerConnection.GetStats().GetDataChannelStats(s.transferChannel)
-	area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(stats.BytesSent-s.transferChannel.BufferedAmount())/1048576, float64(s.size)/1048576))
+	area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(stats.BytesSent-s.transferChannel.BufferedAmount())/1048576, float64(s.Size)/1048576))
 
 	return nil
 }
