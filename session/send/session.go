@@ -24,9 +24,6 @@ type Session struct {
 	gatherDone <-chan struct{}
 	stop       chan struct{}
 
-	// reader io.Reader
-	// reader *os.File
-
 	*lib.Document
 
 	isClosedMut sync.Mutex
@@ -65,4 +62,3 @@ func NewSession(path string) *Session {
 		consentDone: false,
 	}
 }
-
