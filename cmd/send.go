@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -33,5 +30,5 @@ var sendCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sendCmd)
-	sendCmd.PersistentFlags().String("file", "", "name and path of the file")
+	sendCmd.PersistentFlags().StringP("file", "f","", "name and path of the file")
 }

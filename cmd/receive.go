@@ -22,5 +22,5 @@ var receiveCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(receiveCmd)
-	receiveCmd.PersistentFlags().String("file", "", "name and path of the file")
+	receiveCmd.PersistentFlags().StringP("file", "f", "", "name and path of the file")
 }

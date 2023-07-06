@@ -8,7 +8,6 @@ import (
 
 	"github.com/pion/webrtc/v3"
 	"github.com/pterm/pterm"
-	// "github.com/spectre10/fileshare-cli/lib"
 )
 
 func (s *Session) HandleState() {
@@ -21,9 +20,6 @@ func (s *Session) Handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
 
-		// var info lib.Metadata
-		// info.Size = s.size
-		// info.Name = s.name
 		md, err := json.Marshal(s.Metadata)
 		if err != nil {
 			panic(err)
@@ -38,7 +34,7 @@ func (s *Session) Handleopen() func() {
 		}
 		<-s.transferDone
 		go s.sendFile()
-		<-s.stop
+		// <-s.stop
 	}
 }
 
@@ -55,11 +51,16 @@ func (s *Session) sendFile() {
 				err := s.SendPacket(area)
 				if err != nil {
 					if err == io.EOF {
+					outer:
 						for {
-							area.Update(pterm.Sprintf("%.2f/%.2f MBs sent", float64(s.Size-s.transferChannel.BufferedAmount())/1048576, float64(s.Size)/1048576))
-							if s.transferChannel.BufferedAmount() == 0 {
-								break
+							select {
+							case <-s.stop:
+								area.Update(pterm.Sprintf("%.2f/%.2f MBs sent\n", float64(s.Size)/1048576, float64(s.Size)/1048576))
+								break outer
+							default:
+								area.Update(pterm.Sprintf("%.2f/%.2f MBs sent\n", float64(s.Size-s.transferChannel.BufferedAmount())/1048576, float64(s.Size)/1048576))
 							}
+
 						}
 						area.Stop()
 						eof_chan <- struct{}{}
@@ -90,21 +91,28 @@ func (s *Session) SendPacket(area *pterm.AreaPrinter) error {
 }
 
 func (s *Session) Close(closehandler bool) {
-	s.isClosedMut.Lock()
-	if s.isClosed {
-		s.isClosedMut.Unlock()
-		return
-	}
+	// s.isClosedMut.Lock()
+	// if s.isClosed {
+	// 	s.isClosedMut.Unlock()
+	// 	return
+	// }
 	if !closehandler {
+		s.stop <- struct{}{}
 		s.transferChannel.Close()
 		s.controlChannel.Close()
+		err := s.peerConnection.Close()
+		if err != nil {
+			panic(err)
+		}
+		time.Sleep(1 * time.Second)
+		fmt.Println("Connection Closed!")
+		close(s.done)
 	}
-	fmt.Println("Channel Closed!")
-	time.Sleep(1000 * time.Millisecond)
-	s.isClosed = true
-	s.isClosedMut.Unlock()
-
-	close(s.done)
+	// fmt.Println("Channel Closed!")
+	// time.Sleep(1000 * time.Millisecond)
+	// s.stop <- struct{}{}
+	// s.isClosed = true
+	// s.isClosedMut.Unlock()
 }
 
 func (s *Session) Handleclose() func() {

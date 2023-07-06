@@ -82,12 +82,12 @@ func (s *Session) CreateTransferChannel() error {
 		Ordered:           &ordered,
 		MaxPacketLifeTime: &mplt,
 	})
-	s.transferChannel.OnOpen(func() {
-		close(s.transferDone)
-	})
 	if err != nil {
 		return err
 	}
+	s.transferChannel.OnOpen(func() {
+		close(s.transferDone)
+	})
 	return nil
 	// s.transferChannel.OnOpen()
 }
@@ -119,7 +119,6 @@ func (s *Session) CreateControlChannel() error {
 		signal := string(msg.Data)
 		if signal == "Completed" {
 			s.Close(false)
-			s.stop <- struct{}{}
 		}
 	})
 	return nil

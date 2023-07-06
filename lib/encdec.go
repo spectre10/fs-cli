@@ -1,12 +1,15 @@
 package lib
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -53,11 +56,30 @@ func Decode(in string, obj interface{}) error {
 }
 
 func ReadSDP() (string, error) {
-	var sdpString string
-	_, err := fmt.Scanln(&sdpString)
-	if err != nil {
-		return "", err
+	// var sdpString string
+	// _, err := fmt.Scanln(&sdpString)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// sdpString = strings.TrimSpace(sdpString)
+	// return sdpString, nil
+
+	r := bufio.NewReader(os.Stdin)
+	var in string
+	for {
+		var err error
+		in, err = r.ReadString('\n')
+		if err != io.EOF {
+			if err != nil {
+				return "", err
+			}
+		}
+		in = strings.TrimSpace(in)
+		if len(in) > 0 {
+			break
+		}
 	}
-	sdpString = strings.TrimSpace(sdpString)
-	return sdpString, nil
+
+	fmt.Println("")
+	return in, nil
 }

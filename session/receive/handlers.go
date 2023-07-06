@@ -14,6 +14,8 @@ func (s *Session) HandleState() {
 		fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 		if state == webrtc.ICEConnectionStateDisconnected {
 			s.done <- struct{}{}
+		} else if state == webrtc.ICEConnectionStateClosed {
+			// s.close(true)
 		}
 	})
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
@@ -34,7 +36,7 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 		// fmt.Printf("New Data Channel Opened! '%s' - '%d'\n", dc.Label(), dc.ID())
 	})
 	dc.OnClose(func() {
-		fmt.Println("Channel Closed!")
+		fmt.Println("Connection Closed!")
 		s.close(true)
 	})
 	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
