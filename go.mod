@@ -6,12 +6,15 @@ require (
 	github.com/pion/webrtc/v3 v3.2.5
 	github.com/pterm/pterm v0.12.62
 	github.com/spf13/cobra v1.7.0
+	github.com/vbauerster/mpb/v8 v8.4.0
 )
 
 require (
 	atomicgo.dev/cursor v0.1.1 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.0.2 // indirect
+	github.com/VividCortex/ewma v1.2.0 // indirect
+	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect

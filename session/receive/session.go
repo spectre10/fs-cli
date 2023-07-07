@@ -1,14 +1,11 @@
 package receive
 
 import (
-	// "os"
-
 	"github.com/pion/webrtc/v3"
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
 type Session struct {
-	// writer         io.Writer
 	peerConnection  *webrtc.PeerConnection
 	controlChannel  *webrtc.DataChannel
 	transferChannel *webrtc.DataChannel
@@ -23,9 +20,6 @@ type Session struct {
 
 	sizeDone bool
 	*lib.Document
-	// size     uint64
-	// name     string
-	// file     *os.File
 
 	receivedBytes uint64
 }

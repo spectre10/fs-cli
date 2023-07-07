@@ -11,12 +11,15 @@ import (
 
 func (s *Session) HandleState() {
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
-		fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
+		if state != webrtc.ICEConnectionStateClosed {
+			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
+		}
 		if state == webrtc.ICEConnectionStateDisconnected {
 			s.done <- struct{}{}
-		} else if state == webrtc.ICEConnectionStateClosed {
-			// s.close(true)
 		}
+		//       else if state == webrtc.ICEConnectionStateConnected {
+		// 	// s.close(true)
+		// }
 	})
 	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		if dc.Label() == "control" {

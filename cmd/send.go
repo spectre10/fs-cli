@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	// "fmt"
 	"fmt"
 
 	"github.com/spectre10/fileshare-cli/session/send"

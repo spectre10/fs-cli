@@ -1,7 +1,6 @@
 package send
 
 import (
-	// "io"
 	"os"
 	"sync"
 
@@ -48,11 +47,10 @@ func NewSession(path string) *Session {
 	}
 	return &Session{
 		done:            make(chan struct{}),
-		bufferThreshold: 1024 * 1024,
+		bufferThreshold: 512 * 1024,
 		controlDone:     make(chan struct{}, 1),
 		transferDone:    make(chan struct{}, 1),
 		stop:            make(chan struct{}, 1),
-		// reader:          file,
 		Document: &lib.Document{
 			Metadata: &metadata,
 			Packet:   make([]byte, 4*4096),
