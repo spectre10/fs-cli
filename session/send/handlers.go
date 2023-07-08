@@ -10,7 +10,6 @@ import (
 	"github.com/vbauerster/mpb/v8/decor"
 
 	"github.com/pion/webrtc/v3"
-	"github.com/pterm/pterm"
 )
 
 func (s *Session) HandleState() {
@@ -44,8 +43,6 @@ func (s *Session) Handleopen() func() {
 }
 
 func (s *Session) sendFile() {
-	fmt.Println("sending data..")
-	area, _ := pterm.DefaultArea.Start()
 	p := mpb.New(
 		mpb.WithWidth(60),
 		mpb.WithRefreshRate(100*time.Millisecond),
@@ -64,7 +61,6 @@ func (s *Session) sendFile() {
 
 	proxyReader := bar.ProxyReader(s.File)
 	defer proxyReader.Close()
-	defer s.File.Close()
 	eof_chan := make(chan struct{})
 	for {
 		select {
@@ -73,7 +69,7 @@ func (s *Session) sendFile() {
 			return
 		default:
 			if s.transferChannel.BufferedAmount() < s.bufferThreshold {
-				err := s.SendPacket(area, proxyReader)
+				err := s.SendPacket(proxyReader)
 				if err != nil {
 					if err == io.EOF {
 						// outer:
@@ -87,7 +83,6 @@ func (s *Session) sendFile() {
 						// 	}
 
 						// }
-						area.Stop()
 						eof_chan <- struct{}{}
 					} else {
 						panic(err)
@@ -98,7 +93,7 @@ func (s *Session) sendFile() {
 	}
 }
 
-func (s *Session) SendPacket(area *pterm.AreaPrinter, proxyReader io.ReadCloser) error {
+func (s *Session) SendPacket(proxyReader io.ReadCloser) error {
 	n, err := proxyReader.Read(s.Packet)
 	if err != nil {
 		return err

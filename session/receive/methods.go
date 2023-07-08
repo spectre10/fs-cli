@@ -98,13 +98,8 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error) {
 	for {
 		select {
 		case <-s.done:
-
-			proxyWriter.Close()
-			s.File.Close()
-
 			err_chan <- nil
 			return
-
 		case msg := <-s.msgChan:
 			s.receivedBytes += uint64(len(msg))
 			if _, err := proxyWriter.Write(msg); err != nil {
@@ -112,6 +107,10 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error) {
 			}
 
 			if s.receivedBytes == s.Size {
+				err := proxyWriter.Close()
+				if err != nil {
+					err_chan <- err
+				}
 				s.controlChannel.SendText("Completed")
 			}
 		}

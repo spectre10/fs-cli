@@ -27,7 +27,7 @@ type Session struct {
 func NewSession() *Session {
 	return &Session{
 		done:        make(chan struct{}),
-		msgChan:     make(chan []byte, 63),
+		msgChan:     make(chan []byte, 128),
 		consentChan: make(chan struct{}),
 		Document: &lib.Document{
 			Metadata: &lib.Metadata{},
