@@ -8,19 +8,19 @@ import (
 type Session struct {
 	peerConnection *webrtc.PeerConnection
 	controlChannel *webrtc.DataChannel
-	// transferChannel *webrtc.DataChannel
-	// channels        []*lib.Document
-	channels []struct {
+	channels       []struct {
 		*lib.Document
 		msgChan chan []byte
 	}
+	channelsCnt  int32
+	channelsDone int32
+	channelsChan chan struct{}
 
 	gatherDone <-chan struct{}
 	// state      *webrtc.ICEConnectionState
 	done chan struct{}
 
 	consentChan  chan struct{}
-	msgChan      chan []byte
 	isChanClosed bool
 
 	sizeDone bool
@@ -31,7 +31,6 @@ type Session struct {
 func NewSession() *Session {
 	return &Session{
 		done:        make(chan struct{}),
-		msgChan:     make(chan []byte, 128),
 		consentChan: make(chan struct{}),
 		// Document: &lib.Document{
 		// 	Metadata: &lib.Metadata{},
@@ -40,6 +39,10 @@ func NewSession() *Session {
 			*lib.Document
 			msgChan chan []byte
 		}, 0),
+		channelsCnt:  100,
+		channelsDone: 0,
+		channelsChan: make(chan struct{}, 1),
+
 		isChanClosed: false,
 		sizeDone:     false,
 	}

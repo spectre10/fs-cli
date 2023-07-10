@@ -3,6 +3,7 @@ package send
 import (
 	"fmt"
 	"io"
+	"sync/atomic"
 	"time"
 
 	"github.com/spectre10/fileshare-cli/lib"
@@ -32,7 +33,7 @@ func (s *Session) Handleopen() func() {
 		// if err != nil {
 		// 	panic(err)
 		// }
-		err := s.controlChannel.SendText("hello")
+		err := s.controlChannel.SendText(fmt.Sprintf("%d", len(s.channels)))
 		if err != nil {
 			panic(err)
 		}
@@ -43,40 +44,43 @@ func (s *Session) Handleopen() func() {
 			s.Close(false)
 			return
 		}
-		<-s.channels[0].DCdone
-		go s.sendFile(s.channels[0])
+		var numberOfFiles int32 = int32(len(s.channels))
+		for atomic.LoadInt32(&s.channelsDone) != atomic.LoadInt32(&numberOfFiles) {
+		}
+		p := mpb.New(
+			mpb.WithWidth(60),
+			mpb.WithRefreshRate(100*time.Millisecond),
+		)
+		for i := 0; i < len(s.channels); i++ {
+			bar := p.AddBar(int64(s.channels[i].Size),
+				// mpb.BarStyle().Rbound("]"),
+				mpb.PrependDecorators(
+					decor.Name(fmt.Sprintf("Sending '%s': ", s.channels[i].Name)),
+					decor.Counters(decor.SizeB1024(0), "% .2f / % .2f"),
+				),
+				mpb.AppendDecorators(
+					decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "done"),
+				),
+			)
+			proxyReader := bar.ProxyReader(s.channels[i].File)
+			go s.sendFile(s.channels[i], proxyReader, i)
+		}
+		p.Wait()
 		// <-s.stop
 	}
 }
 
-func (s *Session) sendFile(doc *lib.Document) {
-	p := mpb.New(
-		mpb.WithWidth(60),
-		mpb.WithRefreshRate(100*time.Millisecond),
-	)
+func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int) {
 
-	bar := p.New(int64(doc.Size),
-		mpb.BarStyle().Rbound("]"),
-		mpb.PrependDecorators(
-			decor.Name(fmt.Sprintf("Sending '%s': ", doc.Name)),
-			decor.Counters(decor.SizeB1024(0), "% .2f / % .2f"),
-		),
-		mpb.AppendDecorators(
-			decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "done"),
-		),
-	)
-
-	proxyReader := bar.ProxyReader(doc.File)
 	defer proxyReader.Close()
 	eof_chan := make(chan struct{})
 	for {
 		select {
 		case <-eof_chan:
-			p.Wait()
 			return
 		default:
-			if s.channels[0].DC.BufferedAmount() < s.bufferThreshold {
-				err := s.SendPacket(proxyReader, s.channels[0])
+			if s.channels[i].DC.BufferedAmount() < s.bufferThreshold {
+				err := s.SendPacket(proxyReader, s.channels[i])
 				if err != nil {
 					if err == io.EOF {
 						eof_chan <- struct{}{}

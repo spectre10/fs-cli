@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
+	"sync/atomic"
 
 	"github.com/pion/webrtc/v3"
 	"github.com/spectre10/fileshare-cli/lib"
@@ -31,7 +33,8 @@ func (s *Session) HandleState() {
 				msgChan chan []byte
 			}{
 				Document: &lib.Document{
-					Metadata: &lib.Metadata{},
+					Metadata:         &lib.Metadata{},
+					MetadataDoneChan: make(chan struct{}, 1),
 				},
 				msgChan: make(chan []byte, 128),
 			})
@@ -47,6 +50,11 @@ func (s *Session) HandleState() {
 					}
 					s.channels[i].MetadataDone = true
 					s.channels[i].File, err = os.OpenFile(s.channels[i].Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+					s.channels[i].MetadataDoneChan <- struct{}{}
+					atomic.AddInt32(&s.channelsDone, 1)
+					// if atomic.LoadInt32(&s.channelsCnt) == atomic.LoadInt32(&s.channelsDone) {
+					// 	s.channelsChan <- struct{}{}
+					// }
 					if err != nil {
 						panic(err)
 					}
@@ -68,23 +76,22 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 	})
 	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 		if !s.sizeDone {
-			// var md lib.Metadata
-			// err := json.Unmarshal(msg.Data, &md)
-			// if err != nil {
-			// 	panic(err)
-			// }
-			// s.Metadata = &md
-			// s.File, err = os.OpenFile(s.Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-			// if err != nil {
-			// 	panic(err)
-			// }
+			cnt, err := strconv.Atoi(string(msg.Data))
+			cnt32 := int32(cnt)
+			s.channelsCnt = atomic.LoadInt32(&cnt32)
+			if err != nil {
+				panic(err)
+			}
 			s.sizeDone = true
 			var consent string
-			for cap(s.channels) == 0 {
+			// <-s.channelsChan
+			for atomic.LoadInt32(&s.channelsCnt) != atomic.LoadInt32(&s.channelsDone) {
 			}
-			for !s.channels[0].MetadataDone {
+			s.channelsChan <- struct{}{}
+			for i := 0; i < len(s.channels); i++ {
+				fmt.Printf("%s ", s.channels[i].Name)
 			}
-			fmt.Printf("Do you want to receive '%s' ? [Y/N] ", s.channels[0].Name)
+			fmt.Println("Do you want to receive the above files? [Y/N]")
 			fmt.Scanln(&consent)
 			if consent == "n" || consent == "N" {
 				err := s.controlChannel.SendText("n")

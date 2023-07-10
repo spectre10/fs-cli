@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync/atomic"
 
 	"github.com/pion/webrtc/v3"
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
-func (s *Session) Connect(path string) error {
+func (s *Session) Connect(paths []string) error {
 	err := s.CreateConnection()
 	if err != nil {
 		return err
@@ -18,9 +19,12 @@ func (s *Session) Connect(path string) error {
 	if err != nil {
 		return err
 	}
-	err = s.CreateTransferChannel(path)
-	if err != nil {
-		return err
+
+	for i := 0; i < len(paths); i++ {
+		err = s.CreateTransferChannel(paths[i], i)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = s.Createoffer()
@@ -72,7 +76,7 @@ func (s *Session) CreateConnection() error {
 	return nil
 }
 
-func (s *Session) CreateTransferChannel(path string) error {
+func (s *Session) CreateTransferChannel(path string, i int) error {
 	ordered := true
 	mplt := uint16(5000)
 	var err error
@@ -96,7 +100,7 @@ func (s *Session) CreateTransferChannel(path string) error {
 		Name: f.Name(),
 		Size: uint64(f.Size()),
 	}
-	s.channels[0] = &lib.Document{
+	s.channels[i] = &lib.Document{
 		Metadata: &metadata,
 		Packet:   make([]byte, 4*4096),
 		DCdone:   make(chan struct{}, 1),
@@ -105,7 +109,7 @@ func (s *Session) CreateTransferChannel(path string) error {
 	// s.channels[0].DCdone = make(chan struct{}, 1)
 	// s.channels[0].Metadata = &metadata
 	// s.channels[0].Packet = make([]byte, 4*4096)
-	s.channels[0].DC, err = s.peerConnection.CreateDataChannel("dc0", &webrtc.DataChannelInit{
+	s.channels[i].DC, err = s.peerConnection.CreateDataChannel(fmt.Sprintf("dc%d", i), &webrtc.DataChannelInit{
 		Ordered:           &ordered,
 		MaxPacketLifeTime: &mplt,
 	})
@@ -113,16 +117,17 @@ func (s *Session) CreateTransferChannel(path string) error {
 	if err != nil {
 		return err
 	}
-	s.channels[0].DC.OnOpen(func() {
-		md, err := json.Marshal(s.channels[0].Metadata)
+	s.channels[i].DC.OnOpen(func() {
+		md, err := json.Marshal(s.channels[i].Metadata)
 		if err != nil {
 			panic(err)
 		}
-		err = s.channels[0].DC.Send(md)
+		err = s.channels[i].DC.Send(md)
 		if err != nil {
 			panic(err)
 		}
-		close(s.channels[0].DCdone)
+		close(s.channels[i].DCdone)
+		atomic.AddInt32(&s.channelsDone, 1)
 	})
 	return nil
 	// s.transferChannel.OnOpen()
@@ -153,8 +158,11 @@ func (s *Session) CreateControlChannel() error {
 			return
 		}
 		signal := string(msg.Data)
-		if signal == "Completed" {
-			s.Close(false)
+		if signal == "1" {
+			atomic.AddInt32(&s.channelsCnt, 1)
+			if atomic.LoadInt32(&s.channelsCnt) == int32(len(s.channels)) {
+				s.Close(false)
+			}
 		}
 	})
 	return nil

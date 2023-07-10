@@ -13,9 +13,10 @@ type Metadata struct {
 
 type Document struct {
 	*Metadata
-	MetadataDone bool
-	File         *os.File
-	Packet       []byte
-	DC           *webrtc.DataChannel
-	DCdone       chan struct{}
+	MetadataDone     bool
+	MetadataDoneChan chan struct{}
+	File             *os.File
+	Packet           []byte
+	DC               *webrtc.DataChannel
+	DCdone           chan struct{}
 }

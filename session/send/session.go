@@ -23,7 +23,9 @@ type Session struct {
 	gatherDone <-chan struct{}
 	stop       chan struct{}
 
-	channels []*lib.Document
+	channels     []*lib.Document
+	channelsCnt  int32
+	channelsDone int32
 
 	// isClosedMut sync.Mutex
 	// isClosed    bool
@@ -32,7 +34,7 @@ type Session struct {
 	consentDone bool
 }
 
-func NewSession() *Session {
+func NewSession(numberOfFiles int) *Session {
 	// file, err := os.Open(path)
 	// if err != nil {
 	// 	panic(err)
@@ -50,8 +52,10 @@ func NewSession() *Session {
 		bufferThreshold: 512 * 1024,
 		controlDone:     make(chan struct{}, 1),
 		// transferDone:    make(chan struct{}, 1),
-		stop:     make(chan struct{}, 1),
-		channels: make([]*lib.Document, 1),
+		stop:         make(chan struct{}, 1),
+		channels:     make([]*lib.Document, numberOfFiles),
+		channelsCnt:  0,
+		channelsDone: 0,
 		// Document: &lib.Document{
 		// 	Metadata: &metadata,
 		// 	Packet:   make([]byte, 4*4096),

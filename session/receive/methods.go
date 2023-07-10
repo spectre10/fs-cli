@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pion/webrtc/v3"
@@ -77,44 +78,49 @@ func (s *Session) Connect() error {
 		mpb.WithWidth(60),
 		mpb.WithRefreshRate(100*time.Millisecond),
 	)
-
-	bar := p.New(int64(s.channels[0].Size),
-		mpb.BarStyle().Rbound("]"),
-		mpb.PrependDecorators(
-			decor.Name(fmt.Sprintf("Receiving '%s': ", s.channels[0].Name)),
-			decor.Counters(decor.SizeB1024(0), "% .2f / % .2f"),
-		),
-		mpb.AppendDecorators(
-			decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "done"),
-		),
-	)
-	proxyWriter := bar.ProxyWriter(s.channels[0].File)
-	go s.fileWrite(proxyWriter, err_chan)
+	<-s.channelsChan
+	wg := &sync.WaitGroup{}
+	wg.Add(int(s.channelsCnt))
+	for i := 0; i < int(s.channelsCnt); i++ {
+		bar := p.AddBar(int64(s.channels[i].Size),
+			// mpb.BarStyle().Rbound("]"),
+			mpb.PrependDecorators(
+				decor.Name(fmt.Sprintf("Receiving '%s': ", s.channels[i].Name)),
+				decor.Counters(decor.SizeB1024(0), "% .2f / % .2f"),
+			),
+			mpb.AppendDecorators(
+				decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "done"),
+			),
+		)
+		proxyWriter := bar.ProxyWriter(s.channels[i].File)
+		go s.fileWrite(proxyWriter, err_chan, wg, i)
+	}
 	p.Wait()
-	return <-err_chan
+	wg.Wait()
+	return nil
 }
 
-func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error) {
+func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error, wg *sync.WaitGroup, i int) {
 	var receivedBytes uint64 = 0
 	for {
 		select {
 		case <-s.done:
-			err_chan <- nil
+			wg.Done()
 			return
-		case msg := <-s.channels[0].msgChan:
+		case msg := <-s.channels[i].msgChan:
 			receivedBytes += uint64(len(msg))
 			if _, err := proxyWriter.Write(msg); err != nil {
-				err_chan <- err
+				panic(err)
 			}
 
-			if receivedBytes == s.channels[0].Size {
+			if receivedBytes == s.channels[i].Size {
 				err := proxyWriter.Close()
 				if err != nil {
-					err_chan <- err
+					panic(err)
 				}
-				err = s.controlChannel.SendText("Completed")
+				err = s.controlChannel.SendText("1")
 				if err != nil {
-					err_chan <- err
+					panic(err)
 				}
 			}
 		}
