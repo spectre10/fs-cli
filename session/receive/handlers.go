@@ -26,9 +26,33 @@ func (s *Session) HandleState() {
 			s.controlChannel = dc
 			s.assign(dc)
 		} else {
-			s.transferChannel = dc
-			s.transferChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
-				s.msgChan <- msg.Data
+			s.channels = append(s.channels, struct {
+				*lib.Document
+				msgChan chan []byte
+			}{
+				Document: &lib.Document{
+					Metadata: &lib.Metadata{},
+				},
+				msgChan: make(chan []byte, 128),
+			})
+			i := len(s.channels) - 1
+			s.channels[i].DC = dc
+			s.channels[i].DC.OnOpen(func() {
+			})
+			s.channels[i].DC.OnMessage(func(msg webrtc.DataChannelMessage) {
+				if !s.channels[i].MetadataDone {
+					err := json.Unmarshal(msg.Data, &s.channels[i].Metadata)
+					if err != nil {
+						panic(err)
+					}
+					s.channels[i].MetadataDone = true
+					s.channels[i].File, err = os.OpenFile(s.channels[i].Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+					if err != nil {
+						panic(err)
+					}
+				} else {
+					s.channels[i].msgChan <- msg.Data
+				}
 			})
 		}
 	})
@@ -44,24 +68,34 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 	})
 	dc.OnMessage(func(msg webrtc.DataChannelMessage) {
 		if !s.sizeDone {
-			var md lib.Metadata
-			err := json.Unmarshal(msg.Data, &md)
-			if err != nil {
-				panic(err)
-			}
-			s.Metadata = &md
-			s.File, err = os.OpenFile(s.Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-			if err != nil {
-				panic(err)
-			}
+			// var md lib.Metadata
+			// err := json.Unmarshal(msg.Data, &md)
+			// if err != nil {
+			// 	panic(err)
+			// }
+			// s.Metadata = &md
+			// s.File, err = os.OpenFile(s.Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			// if err != nil {
+			// 	panic(err)
+			// }
 			s.sizeDone = true
 			var consent string
-			fmt.Printf("Do you want to receive '%s' ? [Y/N] ", s.Name)
+			for cap(s.channels) == 0 {
+			}
+			for !s.channels[0].MetadataDone {
+			}
+			fmt.Printf("Do you want to receive '%s' ? [Y/N] ", s.channels[0].Name)
 			fmt.Scanln(&consent)
 			if consent == "n" || consent == "N" {
-				s.controlChannel.SendText("n")
+				err := s.controlChannel.SendText("n")
+				if err != nil {
+					panic(err)
+				}
 			} else {
-				s.controlChannel.SendText("Y")
+				err := s.controlChannel.SendText("Y")
+				if err != nil {
+					panic(err)
+				}
 				s.consentChan <- struct{}{}
 			}
 		}

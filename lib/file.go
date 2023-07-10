@@ -1,6 +1,10 @@
 package lib
 
-import "os"
+import (
+	"os"
+
+	"github.com/pion/webrtc/v3"
+)
 
 type Metadata struct {
 	Name string `json:"name"`
@@ -9,6 +13,9 @@ type Metadata struct {
 
 type Document struct {
 	*Metadata
-	File     *os.File
-	Packet   []byte
+	MetadataDone bool
+	File         *os.File
+	Packet       []byte
+	DC           *webrtc.DataChannel
+	DCdone       chan struct{}
 }

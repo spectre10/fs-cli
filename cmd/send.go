@@ -19,8 +19,8 @@ var sendCmd = &cobra.Command{
 			fmt.Println("Missing file path")
 			return
 		}
-		session := send.NewSession(path)
-		err := session.Connect()
+		session := send.NewSession()
+		err := session.Connect(path)
 		if err != nil {
 			panic(err)
 		}
@@ -29,5 +29,5 @@ var sendCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(sendCmd)
-	sendCmd.PersistentFlags().StringP("file", "f","", "name and path of the file")
+	sendCmd.PersistentFlags().StringP("file", "f", "", "name and path of the file")
 }

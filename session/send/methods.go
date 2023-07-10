@@ -1,13 +1,15 @@
 package send
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/pion/webrtc/v3"
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
-func (s *Session) Connect() error {
+func (s *Session) Connect(path string) error {
 	err := s.CreateConnection()
 	if err != nil {
 		return err
@@ -16,7 +18,7 @@ func (s *Session) Connect() error {
 	if err != nil {
 		return err
 	}
-	err = s.CreateTransferChannel()
+	err = s.CreateTransferChannel(path)
 	if err != nil {
 		return err
 	}
@@ -53,10 +55,6 @@ func (s *Session) Connect() error {
 	return nil
 }
 
-func log(msg string) {
-	fmt.Println(msg)
-}
-
 func (s *Session) CreateConnection() error {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
@@ -74,19 +72,57 @@ func (s *Session) CreateConnection() error {
 	return nil
 }
 
-func (s *Session) CreateTransferChannel() error {
+func (s *Session) CreateTransferChannel(path string) error {
 	ordered := true
 	mplt := uint16(5000)
 	var err error
-	s.transferChannel, err = s.peerConnection.CreateDataChannel("transfer", &webrtc.DataChannelInit{
+	// s.channels[0] = &lib.Document{
+	// 	Metadata: &lib.Metadata{},
+	// 	Packet:   make([]byte, 4*4096),
+	// }
+	// s.channels[0].File, err = os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	f, err := file.Stat()
+	if err != nil {
+		panic(err)
+	}
+	metadata := lib.Metadata{
+		Name: f.Name(),
+		Size: uint64(f.Size()),
+	}
+	s.channels[0] = &lib.Document{
+		Metadata: &metadata,
+		Packet:   make([]byte, 4*4096),
+		DCdone:   make(chan struct{}, 1),
+		File:     file,
+	}
+	// s.channels[0].DCdone = make(chan struct{}, 1)
+	// s.channels[0].Metadata = &metadata
+	// s.channels[0].Packet = make([]byte, 4*4096)
+	s.channels[0].DC, err = s.peerConnection.CreateDataChannel("dc0", &webrtc.DataChannelInit{
 		Ordered:           &ordered,
 		MaxPacketLifeTime: &mplt,
 	})
+
 	if err != nil {
 		return err
 	}
-	s.transferChannel.OnOpen(func() {
-		close(s.transferDone)
+	s.channels[0].DC.OnOpen(func() {
+		md, err := json.Marshal(s.channels[0].Metadata)
+		if err != nil {
+			panic(err)
+		}
+		err = s.channels[0].DC.Send(md)
+		if err != nil {
+			panic(err)
+		}
+		close(s.channels[0].DCdone)
 	})
 	return nil
 	// s.transferChannel.OnOpen()
@@ -106,7 +142,7 @@ func (s *Session) CreateControlChannel() error {
 	s.controlChannel.OnOpen(s.Handleopen())
 	s.controlChannel.OnClose(s.Handleclose())
 	s.controlChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
-		if s.consentDone == false {
+		if !s.consentDone {
 			if string(msg.Data) == "n" {
 				s.consent <- false
 				s.consentDone = true
