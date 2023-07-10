@@ -91,8 +91,9 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 			for i := 0; i < len(s.channels); i++ {
 				fmt.Printf("%s ", s.channels[i].Name)
 			}
-			fmt.Println("Do you want to receive the above files? [Y/N]")
+			fmt.Printf("\nDo you want to receive the above files? [Y/N] ")
 			fmt.Scanln(&consent)
+			fmt.Println()
 			if consent == "n" || consent == "N" {
 				err := s.controlChannel.SendText("n")
 				if err != nil {

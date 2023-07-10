@@ -44,8 +44,7 @@ func (s *Session) Handleopen() func() {
 			s.Close(false)
 			return
 		}
-		var numberOfFiles int32 = int32(len(s.channels))
-		for atomic.LoadInt32(&s.channelsDone) != atomic.LoadInt32(&numberOfFiles) {
+		for atomic.LoadInt32(&s.channelsDone) != int32(len(s.channels)) {
 		}
 		p := mpb.New(
 			mpb.WithWidth(60),

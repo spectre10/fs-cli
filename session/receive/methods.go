@@ -97,14 +97,20 @@ func (s *Session) Connect() error {
 	}
 	p.Wait()
 	wg.Wait()
+	err = s.controlChannel.SendText("1")
+	if err != nil {
+		panic(err)
+	}
+	<-s.done
 	return nil
 }
 
 func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error, wg *sync.WaitGroup, i int) {
 	var receivedBytes uint64 = 0
+	signalChan := make(chan struct{}, 1)
 	for {
 		select {
-		case <-s.done:
+		case <-signalChan:
 			wg.Done()
 			return
 		case msg := <-s.channels[i].msgChan:
@@ -118,10 +124,7 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error, wg 
 				if err != nil {
 					panic(err)
 				}
-				err = s.controlChannel.SendText("1")
-				if err != nil {
-					panic(err)
-				}
+				signalChan <- struct{}{}
 			}
 		}
 	}

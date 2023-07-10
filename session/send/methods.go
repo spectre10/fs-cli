@@ -159,10 +159,10 @@ func (s *Session) CreateControlChannel() error {
 		}
 		signal := string(msg.Data)
 		if signal == "1" {
-			atomic.AddInt32(&s.channelsCnt, 1)
-			if atomic.LoadInt32(&s.channelsCnt) == int32(len(s.channels)) {
-				s.Close(false)
-			}
+			// atomic.AddInt32(&s.channelsDone, 1)
+			// if atomic.LoadInt32(&s.channelsDone) == int32(len(s.channels)) {
+			s.Close(false)
+			// }
 		}
 	})
 	return nil
