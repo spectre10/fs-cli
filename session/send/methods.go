@@ -105,6 +105,7 @@ func (s *Session) CreateTransferChannel(path string, i int) error {
 		Packet:   make([]byte, 4*4096),
 		DCdone:   make(chan struct{}, 1),
 		File:     file,
+		DCclose:  make(chan struct{}, 1),
 	}
 	// s.channels[0].DCdone = make(chan struct{}, 1)
 	// s.channels[0].Metadata = &metadata
@@ -128,6 +129,11 @@ func (s *Session) CreateTransferChannel(path string, i int) error {
 		}
 		close(s.channels[i].DCdone)
 		atomic.AddInt32(&s.channelsDone, 1)
+	})
+	s.channels[i].DC.OnMessage(func(msg webrtc.DataChannelMessage) {
+		if string(msg.Data) == "completed" {
+			s.channels[i].DCclose <- struct{}{}
+		}
 	})
 	return nil
 	// s.transferChannel.OnOpen()
@@ -177,6 +183,7 @@ func (s *Session) Createoffer() error {
 	err = s.peerConnection.SetLocalDescription(offer)
 	<-s.gatherDone
 	offer2 := s.peerConnection.LocalDescription()
+	
 	if err != nil {
 		return err
 	}

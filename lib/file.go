@@ -19,4 +19,5 @@ type Document struct {
 	Packet           []byte
 	DC               *webrtc.DataChannel
 	DCdone           chan struct{}
+	DCclose          chan struct{}
 }

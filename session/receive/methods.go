@@ -83,10 +83,11 @@ func (s *Session) Connect() error {
 	wg.Add(int(s.channelsCnt))
 	for i := 0; i < int(s.channelsCnt); i++ {
 		bar := p.AddBar(int64(s.channels[i].Size),
+			mpb.BarFillerClearOnComplete(),
 			// mpb.BarStyle().Rbound("]"),
 			mpb.PrependDecorators(
-				decor.Name(fmt.Sprintf("Receiving '%s': ", s.channels[i].Name)),
-				decor.Counters(decor.SizeB1024(0), "% .2f / % .2f"),
+				decor.Name(fmt.Sprintf("Receiving '%s': ", s.channels[i].Name), decor.WCSyncSpaceR),
+				decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
 			),
 			mpb.AppendDecorators(
 				decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "done"),
@@ -111,6 +112,10 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error, wg 
 	for {
 		select {
 		case <-signalChan:
+			err := s.channels[i].DC.SendText("completed")
+			if err != nil {
+				panic(err)
+			}
 			wg.Done()
 			return
 		case msg := <-s.channels[i].msgChan:

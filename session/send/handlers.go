@@ -3,6 +3,7 @@ package send
 import (
 	"fmt"
 	"io"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -50,32 +51,37 @@ func (s *Session) Handleopen() func() {
 			mpb.WithWidth(60),
 			mpb.WithRefreshRate(100*time.Millisecond),
 		)
+		wg := &sync.WaitGroup{}
+		wg.Add(len(s.channels))
 		for i := 0; i < len(s.channels); i++ {
-			bar := p.AddBar(int64(s.channels[i].Size),
+			bar := p.AddBar(int64(s.channels[i].Size), mpb.BarFillerClearOnComplete(),
 				// mpb.BarStyle().Rbound("]"),
 				mpb.PrependDecorators(
-					decor.Name(fmt.Sprintf("Sending '%s': ", s.channels[i].Name)),
-					decor.Counters(decor.SizeB1024(0), "% .2f / % .2f"),
+					decor.Name(fmt.Sprintf("Sending '%s': ", s.channels[i].Name), decor.WCSyncSpaceR),
+					decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
 				),
 				mpb.AppendDecorators(
 					decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "done"),
+					// decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), "fuck"),
 				),
 			)
 			proxyReader := bar.ProxyReader(s.channels[i].File)
-			go s.sendFile(s.channels[i], proxyReader, i)
+			go s.sendFile(s.channels[i], proxyReader, i, wg)
 		}
+		wg.Wait()
 		p.Wait()
 		// <-s.stop
 	}
 }
 
-func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int) {
-
+func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int, wg *sync.WaitGroup) {
+	defer wg.Done()
 	defer proxyReader.Close()
 	eof_chan := make(chan struct{})
 	for {
 		select {
 		case <-eof_chan:
+			<-s.channels[i].DCclose
 			return
 		default:
 			if s.channels[i].DC.BufferedAmount() < s.bufferThreshold {

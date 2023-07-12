@@ -17,6 +17,7 @@ func (s *Session) HandleState() {
 			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 		}
 		if state == webrtc.ICEConnectionStateDisconnected {
+			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 			s.done <- struct{}{}
 		}
 		//       else if state == webrtc.ICEConnectionStateConnected {
@@ -40,7 +41,8 @@ func (s *Session) HandleState() {
 			})
 			i := len(s.channels) - 1
 			s.channels[i].DC = dc
-			s.channels[i].DC.OnOpen(func() {
+			s.channels[i].DC.OnClose(func() {
+				// fmt.Println("Channel", dc.Label(), "Closed")
 			})
 			s.channels[i].DC.OnMessage(func(msg webrtc.DataChannelMessage) {
 				if !s.channels[i].MetadataDone {
@@ -89,7 +91,7 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 			}
 			s.channelsChan <- struct{}{}
 			for i := 0; i < len(s.channels); i++ {
-				fmt.Printf("%s ", s.channels[i].Name)
+				fmt.Printf(" %s ", s.channels[i].Name)
 			}
 			fmt.Printf("\nDo you want to receive the above files? [Y/N] ")
 			fmt.Scanln(&consent)
