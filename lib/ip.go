@@ -2,7 +2,7 @@ package lib
 
 import "github.com/pion/webrtc/v3"
 
-func Find() (string, error) {
+func Find() ([]string, error) {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
@@ -11,25 +11,25 @@ func Find() (string, error) {
 		},
 	}
 	peerConnection, err := webrtc.NewPeerConnection(config)
+	var address []string
 	if err != nil {
-		return "", err
+		return address, err
 	}
-	var address string = ""
 	peerConnection.OnICECandidate(func(i *webrtc.ICECandidate) {
 		if i != nil {
 			if i.Typ == webrtc.ICECandidateTypeSrflx {
-				address = i.Address
+				address = append(address, i.Address)
 			}
 		}
 	})
 	gatherDone := webrtc.GatheringCompletePromise(peerConnection)
 	offer, err := peerConnection.CreateOffer(nil)
 	if err != nil {
-		return "", err
+		return address, err
 	}
 	err = peerConnection.SetLocalDescription(offer)
 	if err != nil {
-		return "", err
+		return address, err
 	}
 	<-gatherDone
 	return address, nil

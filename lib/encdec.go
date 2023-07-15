@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -44,7 +43,7 @@ func Decode(in string, obj interface{}) error {
 	if err != nil {
 		panic(err)
 	}
-	data, err := ioutil.ReadAll(gz)
+	data, err := io.ReadAll(gz)
 	if err != nil {
 		panic(err)
 	}

@@ -17,8 +17,9 @@ var findipCmd = &cobra.Command{
 		if err != nil {
 			panic(err)
 		}
-		if ip == "" {
+		if len(ip) == 0 {
 			fmt.Println("Could not find the IP address!")
+			return
 		}
 		fmt.Println(ip)
 	},

@@ -10,7 +10,8 @@ var receiveCmd = &cobra.Command{
 	Use:   "receive",
 	Short: "To receive a file",
 	Long: `Receive a file via this command. 
-    For example,$ fileshare-cli receive --file <PathAndNameOfFile>`,
+    For example,
+    $ fileshare-cli receive`,
 	Run: func(cmd *cobra.Command, args []string) {
 		session := receive.NewSession()
 		err := session.Connect()
