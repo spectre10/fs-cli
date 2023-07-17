@@ -14,6 +14,7 @@ import (
 	"github.com/vbauerster/mpb/v8/decor"
 )
 
+// Creates new WebRTC peerConnection.
 func (s *Session) CreateConnection() error {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
@@ -32,6 +33,7 @@ func (s *Session) CreateConnection() error {
 	return nil
 }
 
+// Connects the clients and starts the process of writing to the file.
 func (s *Session) Connect() error {
 	err := s.CreateConnection()
 	if err != nil {
@@ -45,6 +47,7 @@ func (s *Session) Connect() error {
 
 	offer := webrtc.SessionDescription{}
 
+	// Decode from base64 to SDP
 	err = lib.Decode(input, &offer)
 	if err != nil {
 		panic(err)
@@ -65,6 +68,8 @@ func (s *Session) Connect() error {
 	}
 
 	<-s.gatherDone
+	
+	//Encode the SDP to base64
 	sdp, err := lib.Encode(s.peerConnection.LocalDescription())
 	if err != nil {
 		panic(err)
@@ -73,31 +78,39 @@ func (s *Session) Connect() error {
 
 	<-s.consentChan
 
-	err_chan := make(chan error)
+	// Initialize new mpb instance.
 	p := mpb.New(
 		mpb.WithWidth(60),
-		mpb.WithRefreshRate(100*time.Millisecond),
+		mpb.WithRefreshRate(100*time.Millisecond), //updates the stats every 100ms.
 	)
+
+	//wait for all the channels to be initialized.
 	<-s.channelsChan
+
 	wg := &sync.WaitGroup{}
 	wg.Add(int(s.channelsCnt))
 	for i := 0; i < int(s.channelsCnt); i++ {
 		bar := p.AddBar(int64(s.channels[i].Size),
-			mpb.BarFillerClearOnComplete(),
-			// mpb.BarStyle().Rbound("]"),
+			mpb.BarFillerClearOnComplete(), // Make the progress bar disappear on completion.
 			mpb.PrependDecorators(
 				decor.Name(fmt.Sprintf("Receiving '%s': ", s.channels[i].Name), decor.WCSyncSpaceR),
+				//Make the size counter disapper on completion.
 				decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
 			),
 			mpb.AppendDecorators(
-				decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "done"),
+				decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "Done!"), //Replace percentage with "Done!" on completion.
 			),
 		)
+		//mpb's proxyWriter to automatically handle the progress bar and stats
 		proxyWriter := bar.ProxyWriter(s.channels[i].File)
-		go s.fileWrite(proxyWriter, err_chan, wg, i)
+		go s.fileWrite(proxyWriter, wg, i)
 	}
+	
+	//wait for all the bars to complete.
 	p.Wait()
+	//wait for all the fileWrite functions to complete.
 	wg.Wait()
+	//signal to the sender to close the connection.
 	err = s.controlChannel.SendText("1")
 	if err != nil {
 		panic(err)
@@ -106,12 +119,13 @@ func (s *Session) Connect() error {
 	return nil
 }
 
-func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error, wg *sync.WaitGroup, i int) {
+func (s *Session) fileWrite(proxyWriter io.WriteCloser, wg *sync.WaitGroup, i int) {
 	var receivedBytes uint64 = 0
 	signalChan := make(chan struct{}, 1)
 	for {
 		select {
 		case <-signalChan:
+			//signal the completion of a particular file.
 			err := s.channels[i].DC.SendText("completed")
 			if err != nil {
 				panic(err)
@@ -120,10 +134,12 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, err_chan chan error, wg 
 			return
 		case msg := <-s.channels[i].msgChan:
 			receivedBytes += uint64(len(msg))
+			//write packet
 			if _, err := proxyWriter.Write(msg); err != nil {
 				panic(err)
 			}
 
+			//If all the packets are received, close the writer and go to the first case of select.
 			if receivedBytes == s.channels[i].Size {
 				err := proxyWriter.Close()
 				if err != nil {

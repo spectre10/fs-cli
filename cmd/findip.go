@@ -25,6 +25,7 @@ var findipCmd = &cobra.Command{
 	},
 }
 
+// Add the findip command.
 func init() {
 	rootCmd.AddCommand(findipCmd)
 }

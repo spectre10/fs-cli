@@ -10,6 +10,7 @@ import (
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
+// Connects clients and creates datachannels.
 func (s *Session) Connect(paths []string) error {
 	err := s.CreateConnection()
 	if err != nil {
@@ -20,6 +21,7 @@ func (s *Session) Connect(paths []string) error {
 		return err
 	}
 
+	//here len(paths) is number of files to be sent
 	for i := 0; i < len(paths); i++ {
 		err = s.CreateTransferChannel(paths[i], i)
 		if err != nil {
@@ -36,6 +38,7 @@ func (s *Session) Connect(paths []string) error {
 
 	var text string
 
+	//take remote SDP in answer
 	answer := webrtc.SessionDescription{}
 	for {
 		text, err = lib.ReadSDP()
@@ -59,6 +62,7 @@ func (s *Session) Connect(paths []string) error {
 	return nil
 }
 
+// Creates WebRTC PeerConnection.
 func (s *Session) CreateConnection() error {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
@@ -76,15 +80,9 @@ func (s *Session) CreateConnection() error {
 	return nil
 }
 
+// Creates Datachannel for file transfer.
 func (s *Session) CreateTransferChannel(path string, i int) error {
-	ordered := true
-	mplt := uint16(5000)
 	var err error
-	// s.channels[0] = &lib.Document{
-	// 	Metadata: &lib.Metadata{},
-	// 	Packet:   make([]byte, 4*4096),
-	// }
-	// s.channels[0].File, err = os.Open(path)
 	if err != nil {
 		panic(err)
 	}
@@ -96,10 +94,13 @@ func (s *Session) CreateTransferChannel(path string, i int) error {
 	if err != nil {
 		panic(err)
 	}
+
+	//create new metadata struct.
 	metadata := lib.Metadata{
 		Name: f.Name(),
 		Size: uint64(f.Size()),
 	}
+	//create new document struct.
 	s.channels[i] = &lib.Document{
 		Metadata: &metadata,
 		Packet:   make([]byte, 4*4096),
@@ -107,17 +108,21 @@ func (s *Session) CreateTransferChannel(path string, i int) error {
 		File:     file,
 		DCclose:  make(chan struct{}, 1),
 	}
-	// s.channels[0].DCdone = make(chan struct{}, 1)
-	// s.channels[0].Metadata = &metadata
-	// s.channels[0].Packet = make([]byte, 4*4096)
+
+	//Ordered property maintains the order of the packets while transferring.
+	ordered := true
+	//mplt means MaxPacketLifeTime.
+	//It is the time in Miliseconds during which if the sender does not receive acknowledgement of the packet, it will retransmit.
+	mplt := uint16(5000)
 	s.channels[i].DC, err = s.peerConnection.CreateDataChannel(fmt.Sprintf("dc%d", i), &webrtc.DataChannelInit{
 		Ordered:           &ordered,
 		MaxPacketLifeTime: &mplt,
 	})
-
 	if err != nil {
 		return err
 	}
+
+	//first send the metadata.
 	s.channels[i].DC.OnOpen(func() {
 		md, err := json.Marshal(s.channels[i].Metadata)
 		if err != nil {
@@ -130,15 +135,17 @@ func (s *Session) CreateTransferChannel(path string, i int) error {
 		close(s.channels[i].DCdone)
 		atomic.AddInt32(&s.channelsDone, 1)
 	})
+
+	//This indicates that transfer is done on this datachannel.
 	s.channels[i].DC.OnMessage(func(msg webrtc.DataChannelMessage) {
 		if string(msg.Data) == "completed" {
 			s.channels[i].DCclose <- struct{}{}
 		}
 	})
 	return nil
-	// s.transferChannel.OnOpen()
 }
 
+// Creates control datachannel for communicating consent and signaling.
 func (s *Session) CreateControlChannel() error {
 	ordered := true
 	mplt := uint16(5000)
@@ -164,16 +171,15 @@ func (s *Session) CreateControlChannel() error {
 			return
 		}
 		signal := string(msg.Data)
+		// indicates that the operation is complete.
 		if signal == "1" {
-			// atomic.AddInt32(&s.channelsDone, 1)
-			// if atomic.LoadInt32(&s.channelsDone) == int32(len(s.channels)) {
 			s.Close(false)
-			// }
 		}
 	})
 	return nil
 }
 
+// Creates offer and encodes it in base64.
 func (s *Session) Createoffer() error {
 	offer, err := s.peerConnection.CreateOffer(nil)
 	if err != nil {
@@ -183,7 +189,7 @@ func (s *Session) Createoffer() error {
 	err = s.peerConnection.SetLocalDescription(offer)
 	<-s.gatherDone
 	offer2 := s.peerConnection.LocalDescription()
-	
+
 	if err != nil {
 		return err
 	}

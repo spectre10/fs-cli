@@ -14,6 +14,7 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
+// Prints the state change.
 func (s *Session) HandleState() {
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
 		if state != webrtc.ICEConnectionStateClosed {
@@ -22,22 +23,17 @@ func (s *Session) HandleState() {
 	})
 }
 
+// When control datachannel opens.
 func (s *Session) Handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
 
-		// md, err := json.Marshal(s.Metadata)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// err = s.controlChannel.Send(md)
-		// if err != nil {
-		// 	panic(err)
-		// }
+		//Sends the number of files to be transferred.
 		err := s.controlChannel.SendText(fmt.Sprintf("%d", len(s.channels)))
 		if err != nil {
 			panic(err)
 		}
+
 		fmt.Println("Waiting for receiver to accept the transfer...")
 		concentCheck := <-s.consent
 		if !concentCheck {
@@ -45,38 +41,48 @@ func (s *Session) Handleopen() func() {
 			s.Close(false)
 			return
 		}
+
+		//wait for all the transfer datachannels to be initiallized.
+		//atomic is used to avoid race conditions due to the fact that s.channelsDone would be incrementing at the same time.
 		for atomic.LoadInt32(&s.channelsDone) != int32(len(s.channels)) {
 		}
+
 		p := mpb.New(
-			mpb.WithWidth(60),
-			mpb.WithRefreshRate(100*time.Millisecond),
+			// mpb.WithWidth(60),
+			mpb.WithRefreshRate(100 * time.Millisecond),
 		)
+
 		wg := &sync.WaitGroup{}
 		wg.Add(len(s.channels))
 		for i := 0; i < len(s.channels); i++ {
-			bar := p.AddBar(int64(s.channels[i].Size), mpb.BarFillerClearOnComplete(),
-				// mpb.BarStyle().Rbound("]"),
+			bar := p.AddBar(int64(s.channels[i].Size),
+				mpb.BarFillerClearOnComplete(), //Clears the bar on completion.
 				mpb.PrependDecorators(
+					//WCSyncSpaceR synchronizes the margin between multiple bars.
 					decor.Name(fmt.Sprintf("Sending '%s': ", s.channels[i].Name), decor.WCSyncSpaceR),
+					//clear byte counter on completion.
 					decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
 				),
 				mpb.AppendDecorators(
-					decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "done"),
-					// decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), "fuck"),
+					//replace Percentage with "Done!" on completion.
+					decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "Done!"),
 				),
 			)
+
+			//proxyReader handles the stats(byte counter, percentage) automatically.
+			//it is a wrapper of io.Reader.
 			proxyReader := bar.ProxyReader(s.channels[i].File)
 			go s.sendFile(s.channels[i], proxyReader, i, wg)
 		}
 		wg.Wait()
 		p.Wait()
-		// <-s.stop
 	}
 }
 
 func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer proxyReader.Close()
+
 	eof_chan := make(chan struct{})
 	for {
 		select {
@@ -84,9 +90,11 @@ func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int, 
 			<-s.channels[i].DCclose
 			return
 		default:
+			// Only send packet if the Buffered amount is less than the threshold.
 			if s.channels[i].DC.BufferedAmount() < s.bufferThreshold {
 				err := s.SendPacket(proxyReader, s.channels[i])
 				if err != nil {
+					// if reached End Of File
 					if err == io.EOF {
 						eof_chan <- struct{}{}
 					} else {
@@ -98,58 +106,57 @@ func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int, 
 	}
 }
 
+// Sends the packet.
 func (s *Session) SendPacket(proxyReader io.ReadCloser, doc *lib.Document) error {
+	// Read the file to the packet array of size 16KiB.
 	n, err := proxyReader.Read(doc.Packet)
 	if err != nil {
 		return err
 	}
 
+	//slice it if the size is less than 16KiB.
 	doc.Packet = doc.Packet[:n]
+
 	err = doc.DC.Send(doc.Packet)
 	if err != nil {
 		return err
 	}
+
+	//make the length of packet array 16KiB again.
 	doc.Packet = doc.Packet[:cap(doc.Packet)]
 	return nil
 }
 
+// Closes the channels.
+// Ugly.
 func (s *Session) Close(closehandler bool) {
-	// s.isClosedMut.Lock()
-	// if s.isClosed {
-	// 	s.isClosedMut.Unlock()
-	// 	return
-	// }
+	//closehandler indicates if the call came from the listener or it was explicitly called.
+	//only handle if the function was explicitly called.
 	if !closehandler {
 		s.stop <- struct{}{}
-		// dc.Close()
 		for i := 0; i < len(s.channels); i++ {
-			_ = s.channels[i].DC.Close()
-			// if err!=nil {
-			// 	panic(err)
-			// }
+			err := s.channels[i].DC.Close()
+			if err != nil {
+				panic(err)
+			}
 		}
 		s.controlChannel.Close()
 		err := s.peerConnection.Close()
 		if err != nil {
 			panic(err)
 		}
+
+		//wait for the receiver to receive the signal of closing the connection.
+		//other wise the receiver hangs and disconnects after no response.
 		time.Sleep(1 * time.Second)
 		fmt.Println("Connection Closed!")
 		close(s.done)
 	}
-	// fmt.Println("Channel Closed!")
-	// time.Sleep(1000 * time.Millisecond)
-	// s.stop <- struct{}{}
-	// s.isClosed = true
-	// s.isClosedMut.Unlock()
 }
 
+// Handle the closing of control channel.
 func (s *Session) Handleclose() func() {
 	return func() {
 		s.Close(true)
 	}
-}
-
-func HandleError(err error) {
-	panic(err)
 }

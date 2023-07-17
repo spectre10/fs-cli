@@ -5,45 +5,34 @@ import (
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
+// Receiver's session struct to manage Datachannels, PeerConnection, Go Signaling Channels etc.
 type Session struct {
 	peerConnection *webrtc.PeerConnection
-	controlChannel *webrtc.DataChannel
+	controlChannel *webrtc.DataChannel //handling consent and metadata
 	channels       []struct {
 		*lib.Document
-		msgChan chan []byte
+		msgChan chan []byte // This is for sending the packets received via the handler function to the io.writer.
 	}
-	channelsCnt  int32
-	channelsDone int32
-	channelsChan chan struct{}
+	channelsCnt  int32         //number of channels or the size of the above channels array.
+	channelsDone int32         //how many channels are initiallized.
+	channelsChan chan struct{} //for Signaling when channelsCnt equals ChannelsDone
 
-	gatherDone <-chan struct{}
-	// state      *webrtc.ICEConnectionState
-	done chan struct{}
+	gatherDone <-chan struct{} //for waiting until all the ICECandidates are found.
+	done       chan struct{}   //when operation ends.
 
-	consentChan  chan struct{}
-	isChanClosed bool
-
-	sizeDone bool
-	// *lib.Document
-
+	consentChan chan struct{} //receiving consent
 }
 
+// Constructs new session object and returns it with some default values.
 func NewSession() *Session {
 	return &Session{
 		done:        make(chan struct{}),
 		consentChan: make(chan struct{}),
-		// Document: &lib.Document{
-		// 	Metadata: &lib.Metadata{},
-		// },
 		channels: make([]struct {
 			*lib.Document
 			msgChan chan []byte
 		}, 0),
-		channelsCnt:  100,
 		channelsDone: 0,
 		channelsChan: make(chan struct{}, 1),
-
-		isChanClosed: false,
-		sizeDone:     false,
 	}
 }

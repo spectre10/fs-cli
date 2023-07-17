@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Represent the root command without any args.
 var rootCmd = &cobra.Command{
 	Use:     "fileshare-cli",
 	Short:   "Peer-to-Peer filesharing CLI application",
@@ -30,7 +31,4 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-func init() {
 }

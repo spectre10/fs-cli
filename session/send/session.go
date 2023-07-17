@@ -1,22 +1,18 @@
 package send
 
 import (
-	// "os"
-	// "sync"
-
 	"github.com/pion/webrtc/v3"
 	"github.com/spectre10/fileshare-cli/lib"
 )
 
+// To manage the datachannels and PeerConnection.
 type Session struct {
 	peerConnection *webrtc.PeerConnection
-
-	// transferChannel *webrtc.DataChannel
-	// transferDone    chan struct{}
 
 	controlChannel *webrtc.DataChannel
 	controlDone    chan struct{}
 
+	//Maximum amount the buffer can store for each datachannel.
 	bufferThreshold uint64
 
 	done       chan struct{}
@@ -27,41 +23,21 @@ type Session struct {
 	channelsCnt  int32
 	channelsDone int32
 
-	// isClosedMut sync.Mutex
-	// isClosed    bool
-
 	consent     chan bool
 	consentDone bool
 }
 
+// Returns new Session object with some default values.
 func NewSession(numberOfFiles int) *Session {
-	// file, err := os.Open(path)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// f, err := file.Stat()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// metadata := lib.Metadata{
-	// 	Name: f.Name(),
-	// 	Size: uint64(f.Size()),
-	// }
 	return &Session{
 		done:            make(chan struct{}),
-		bufferThreshold: 512 * 1024,
+		bufferThreshold: 512 * 1024, //512KiB
 		controlDone:     make(chan struct{}, 1),
-		// transferDone:    make(chan struct{}, 1),
-		stop:         make(chan struct{}, 1),
-		channels:     make([]*lib.Document, numberOfFiles),
-		channelsCnt:  0,
-		channelsDone: 0,
-		// Document: &lib.Document{
-		// 	Metadata: &metadata,
-		// 	Packet:   make([]byte, 4*4096),
-		// 	File:     file,
-		// },
-		consent:     make(chan bool),
-		consentDone: false,
+		stop:            make(chan struct{}, 1),
+		channels:        make([]*lib.Document, numberOfFiles),
+		channelsCnt:     0,
+		channelsDone:    0,
+		consent:         make(chan bool),
+		consentDone:     false,
 	}
 }

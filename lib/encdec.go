@@ -12,6 +12,7 @@ import (
 	"strings"
 )
 
+// encodes the SDP object into base64 and returns the string
 func Encode(obj interface{}) (string, error) {
 	b, err := json.Marshal(obj)
 	if err != nil {
@@ -32,6 +33,7 @@ func Encode(obj interface{}) (string, error) {
 	return sdp, nil
 }
 
+// Decodes the base64 string into SDP object.
 func Decode(in string, obj interface{}) error {
 	b, err := base64.StdEncoding.DecodeString(in)
 	if err != nil {
@@ -54,6 +56,8 @@ func Decode(in string, obj interface{}) error {
 	return json.Unmarshal(data, obj)
 }
 
+// Reads the SDP from terminal.
+// Currently maybe not working on windows.
 func ReadSDP() (string, error) {
 	// var sdpString string
 	// _, err := fmt.Scanln(&sdpString)

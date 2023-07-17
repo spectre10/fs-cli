@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Represents the send command.
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "To send a file",
@@ -25,6 +26,7 @@ var sendCmd = &cobra.Command{
 	},
 }
 
+// Add send command.
 func init() {
 	rootCmd.AddCommand(sendCmd)
 }
