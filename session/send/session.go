@@ -25,6 +25,8 @@ type Session struct {
 
 	consent     chan bool
 	consentDone bool
+	//start time of the transaction
+	globalStartTime int64
 }
 
 // Returns new Session object with some default values.

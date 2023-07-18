@@ -20,7 +20,8 @@ type Session struct {
 	gatherDone <-chan struct{} //for waiting until all the ICECandidates are found.
 	done       chan struct{}   //when operation ends.
 
-	consentChan chan struct{} //receiving consent
+	consentChan     chan struct{} //receiving consent
+	globalStartTime int64         //start time of the transaction
 }
 
 // Constructs new session object and returns it with some default values.
