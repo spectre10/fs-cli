@@ -8,6 +8,7 @@ import (
 // Receiver's session struct to manage Datachannels, PeerConnection, Go Signaling Channels etc.
 type Session struct {
 	peerConnection *webrtc.PeerConnection
+	
 	controlChannel *webrtc.DataChannel //handling consent and metadata
 	channels       []struct {
 		*lib.Document
@@ -21,6 +22,7 @@ type Session struct {
 	done       chan struct{}   //when operation ends.
 
 	consentChan     chan struct{} //receiving consent
+	
 	globalStartTime int64         //start time of the transaction
 }
 

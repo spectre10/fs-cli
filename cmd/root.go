@@ -12,8 +12,8 @@ import (
 var rootCmd = &cobra.Command{
 	Use:     "fileshare-cli",
 	Short:   "Peer-to-Peer filesharing CLI application",
-	Long:    `A Peer-to-Peer filesharing CLI solution without a server in the middle.`,
-	Version: "v0.3.0",
+	Long:    `A Peer-to-Peer multi-threaded filesharing CLI app using WebRTC.`,
+	Version: "v0.4.0",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -112,6 +112,11 @@ func (s *Session) Connect() error {
 				decor.OnComplete(decor.Any(func(st decor.Statistics) string {
 					amount := float64(st.Current) / 1048576.0
 					period := float64(time.Now().UnixMilli()-doc.StartTime) / 1000.0
+
+					// If the clients are disconnected, do not update speed.
+					if s.peerConnection.ICEConnectionState() == webrtc.ICEConnectionStateDisconnected {
+						return fmt.Sprintf("%.2f MiB/s", 0.0)
+					}
 					return fmt.Sprintf("%.2f MiB/s", amount/period)
 				}, decor.WCSyncSpaceR), ""),
 			),
