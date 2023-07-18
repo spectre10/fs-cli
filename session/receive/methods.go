@@ -68,7 +68,7 @@ func (s *Session) Connect() error {
 	}
 
 	<-s.gatherDone
-	
+
 	//Encode the SDP to base64
 	sdp, err := lib.Encode(s.peerConnection.LocalDescription())
 	if err != nil {
@@ -80,8 +80,8 @@ func (s *Session) Connect() error {
 
 	// Initialize new mpb instance.
 	p := mpb.New(
-		mpb.WithWidth(60),
-		mpb.WithRefreshRate(100*time.Millisecond), //updates the stats every 100ms.
+		// mpb.WithWidth(60),
+		mpb.WithRefreshRate(100 * time.Millisecond), //updates the stats every 100ms.
 	)
 
 	//wait for all the channels to be initialized.
@@ -90,12 +90,29 @@ func (s *Session) Connect() error {
 	wg := &sync.WaitGroup{}
 	wg.Add(int(s.channelsCnt))
 	for i := 0; i < int(s.channelsCnt); i++ {
+		// because i's value changes in decor.Any's callback function.
+		doc := s.channels[i]
 		bar := p.AddBar(int64(s.channels[i].Size),
 			mpb.BarFillerClearOnComplete(), // Make the progress bar disappear on completion.
 			mpb.PrependDecorators(
 				decor.Name(fmt.Sprintf("Receiving '%s': ", s.channels[i].Name), decor.WCSyncSpaceR),
+
 				//Make the size counter disapper on completion.
-				decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
+				// decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
+
+				//display the received amount
+				//decor.SizeB1024 converts the amount into appropriate units of data (KiB,MiB,Gib)
+				decor.OnComplete(decor.Any(func(st decor.Statistics) string {
+					stats, _ := s.peerConnection.GetStats().GetDataChannelStats(doc.DC)
+					return fmt.Sprintf("% .2f ", decor.SizeB1024(int64(stats.BytesReceived)))
+				}, decor.WCSyncSpaceR), ""),
+
+				//display speed
+				decor.OnComplete(decor.Any(func(st decor.Statistics) string {
+					amount := float64(st.Current) / 1048576.0
+					period := float64(time.Now().UnixMilli()-doc.StartTime) / 1000.0
+					return fmt.Sprintf("%.2f MiB/s", amount/period)
+				}, decor.WCSyncSpaceR), ""),
 			),
 			mpb.AppendDecorators(
 				decor.OnComplete(decor.Percentage(decor.WC{W: 5}), "Done!"), //Replace percentage with "Done!" on completion.
@@ -103,9 +120,10 @@ func (s *Session) Connect() error {
 		)
 		//mpb's proxyWriter to automatically handle the progress bar and stats
 		proxyWriter := bar.ProxyWriter(s.channels[i].File)
+		s.channels[i].StartTime = time.Now().UnixMilli()
 		go s.fileWrite(proxyWriter, wg, i)
 	}
-	
+
 	//wait for all the bars to complete.
 	p.Wait()
 	//wait for all the fileWrite functions to complete.

@@ -15,10 +15,11 @@ type Metadata struct {
 // This struct is essentially a file and its associated information (including the WebRTC datachannel).
 type Document struct {
 	*Metadata
-	MetadataDone     bool
-	File             *os.File
-	Packet           []byte
-	DC               *webrtc.DataChannel
-	DCdone           chan struct{}
-	DCclose          chan struct{}
+	MetadataDone bool
+	File         *os.File
+	Packet       []byte
+	DC           *webrtc.DataChannel
+	DCdone       chan struct{}
+	DCclose      chan struct{}
+	StartTime    int64
 }
