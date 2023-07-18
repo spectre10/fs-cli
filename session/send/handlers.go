@@ -52,6 +52,8 @@ func (s *Session) Handleopen() func() {
 			mpb.WithRefreshRate(100 * time.Millisecond),
 		)
 
+		s.globalStartTime = lib.Start()
+
 		wg := &sync.WaitGroup{}
 		wg.Add(len(s.channels))
 		for i := 0; i < len(s.channels); i++ {
@@ -93,7 +95,6 @@ func (s *Session) Handleopen() func() {
 			s.channels[i].StartTime = time.Now().UnixMilli()
 			go s.sendFile(s.channels[i], proxyReader, i, wg)
 		}
-
 		p.Wait()
 		wg.Wait()
 	}
@@ -153,6 +154,12 @@ func (s *Session) Close(closehandler bool) {
 	//closehandler indicates if the call came from the listener or it was explicitly called.
 	//only handle if the function was explicitly called.
 	if !closehandler {
+		//get the total size of all the files.
+		var fileSize uint64 = 0
+		for i := 0; i < len(s.channels); i++ {
+			fileSize += s.channels[i].Size
+		}
+
 		s.stop <- struct{}{}
 		for i := 0; i < len(s.channels); i++ {
 			err := s.channels[i].DC.Close()
@@ -165,6 +172,8 @@ func (s *Session) Close(closehandler bool) {
 		if err != nil {
 			panic(err)
 		}
+
+		lib.FinalStat(fileSize, s.globalStartTime)
 
 		//wait for the receiver to receive the signal of closing the connection.
 		//other wise the receiver hangs and disconnects after no response.

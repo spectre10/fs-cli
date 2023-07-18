@@ -87,6 +87,7 @@ func (s *Session) Connect() error {
 	//wait for all the channels to be initialized.
 	<-s.channelsChan
 
+	s.globalStartTime = lib.Start()
 	wg := &sync.WaitGroup{}
 	wg.Add(int(s.channelsCnt))
 	for i := 0; i < int(s.channelsCnt); i++ {
@@ -128,6 +129,15 @@ func (s *Session) Connect() error {
 	p.Wait()
 	//wait for all the fileWrite functions to complete.
 	wg.Wait()
+
+	//get total size of all the files.
+	var fileSize uint64 = 0
+	for i := 0; i < int(s.channelsCnt); i++ {
+		fileSize += s.channels[i].Size
+	}
+
+	lib.FinalStat(fileSize, s.globalStartTime)
+
 	//signal to the sender to close the connection.
 	err = s.controlChannel.SendText("1")
 	if err != nil {
