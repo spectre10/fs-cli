@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pion/webrtc/v3"
-	"github.com/spectre10/fileshare-cli/lib"
+	"github.com/spectre10/fs-cli/lib"
 
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"

@@ -1,5 +1,5 @@
 builds:
-  - binary: fileshare-cli
+  - binary: fs-cli
     goos:
       - darwin
       - linux

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/spectre10/fileshare-cli/session/receive"
+	"github.com/spectre10/fs-cli/session/receive"
 	"github.com/spf13/cobra"
 )
 

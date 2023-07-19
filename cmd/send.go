@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spectre10/fileshare-cli/session/send"
+	"github.com/spectre10/fs-cli/session/send"
 	"github.com/spf13/cobra"
 )
 

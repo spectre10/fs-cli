@@ -2,7 +2,7 @@ package send
 
 import (
 	"github.com/pion/webrtc/v3"
-	"github.com/spectre10/fileshare-cli/lib"
+	"github.com/spectre10/fs-cli/lib"
 )
 
 // To manage the datachannels and PeerConnection.

@@ -1,4 +1,4 @@
-module github.com/spectre10/fileshare-cli
+module github.com/spectre10/fs-cli
 
 go 1.20
 

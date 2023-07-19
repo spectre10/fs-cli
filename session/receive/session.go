@@ -2,7 +2,7 @@ package receive
 
 import (
 	"github.com/pion/webrtc/v3"
-	"github.com/spectre10/fileshare-cli/lib"
+	"github.com/spectre10/fs-cli/lib"
 )
 
 // Receiver's session struct to manage Datachannels, PeerConnection, Go Signaling Channels etc.
