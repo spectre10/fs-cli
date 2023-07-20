@@ -1,22 +1,31 @@
-# fileshare-cli
+[![Go Reference](https://pkg.go.dev/badge/github.com/spectre10/fs-cli.svg)](https://pkg.go.dev/github.com/spectre10/fs-cli)
+[![Go Report Card](https://goreportcard.com/badge/github.com/spectre10/fileshare-cli)](https://goreportcard.com/report/github.com/spectre10/fileshare-cli)
 
-fileshare-cli is multi-threaded CLI app written in Golang to transfer multiple files concurrently via WebRTC protocol.
 
-It is peer-to-peer (P2P), so there are no servers in middle. However, Google's STUN server is used to retrieve information about public address, the type of NAT clients are behind and the Internet side port associated by the NAT with a particular local port. (Transfer of files does not happen through Google servers.)
+# fs-cli
 
-This information is used to setup Data Channel between clients.
+fs-cli is multi-threaded CLI app written in Golang to transfer multiple files concurrently via WebRTC.
 
-You can also find your public IP address via WebRTC. (See Usage)
+It is peer-to-peer (P2P), so there are no servers in middle. However, Google's STUN server is used to retrieve information about public address and the type of NAT clients are behind. (Transfer of files does not happen through Google servers.)
 
-https://github.com/spectre10/fileshare-cli/assets/72698233/bc1e2863-1b17-4ccd-b7e6-aae743844676
+This information is used to setup a Peer Connection between clients. After connecting, each file is assigned a WebRTC Data-Channel for streaming. And the transfer happens concurrently over all Data-Channels. 
+
+You can also find your public IP address via WebRTC. (See Usage Below)
+
+
+
+https://github.com/spectre10/fs-cli/assets/72698233/fab8633b-af72-420c-9eff-3f91ada0eabc
+
+
+
+Currently only tested on Linux.
 
 ## Architecture
 
-![webrtc](https://github.com/spectre10/fileshare-cli/assets/72698233/d6e92b4e-ceea-46f7-83d1-cb994a75774f)
+![WebRTC](https://github.com/spectre10/fs-cli/assets/72698233/4c488af3-61e5-4e5f-9dc0-c5dfe528284e)
 
 
-
-# Installation
+## Installation
 
 If you have Go installed, ([Install from here](https://go.dev/doc/install))
 
@@ -24,34 +33,36 @@ Add $GOPATH/bin to your $PATH. And then,
 
 if you want the latest release version, then run this command,
 ```sh
-go install github.com/spectre10/fileshare-cli@latest
+go install github.com/spectre10/fs-cli@latest
 ```
 or
 
 if you want a specific release version, then run this command,
 ```sh
-go install github.com/spectre10/fileshare-cli@vX.X.X
+go install github.com/spectre10/fs-cli@vX.X.X
 ```
 ***
 
 Alternatively, you can also download from GitHub Releases.
 
-# Usage
+## Usage
 
 To send a file,
 ```
-fileshare-cli send <filepath1> <filepath2> ... 
+fs-cli send <filepath1> <filepath2> ... 
 ```
 
 To receive a file,
 ```
-fileshare-cli receive
+fs-cli receive
 ```
 
 To find your IP address,
 ```
-fileshare-cli findip
+fs-cli findip
 ```
 
 -----------------------------------
-Currently only tested on Linux.
+## References
+* [pion/webrtc](https://github.com/pion/webrtc)
+* [Antonito/gfile](https://github.com/Antonito/gfile)
