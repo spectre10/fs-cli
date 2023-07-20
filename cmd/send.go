@@ -12,7 +12,7 @@ var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "To send a file",
 	Long: `This command is used to send a file. For example,
-    $ fileshare-cli send <PathAndNameOfFile> ... ...`,
+    $ fs-cli send <PathAndNameOfFile> ... ...`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			fmt.Println("Missing file path")

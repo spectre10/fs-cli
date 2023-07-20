@@ -10,7 +10,7 @@ import (
 
 // Represent the root command without any args.
 var rootCmd = &cobra.Command{
-	Use:     "fileshare-cli",
+	Use:     "fs-cli",
 	Short:   "Peer-to-Peer filesharing CLI application",
 	Long:    `A Peer-to-Peer multi-threaded filesharing CLI app using WebRTC.`,
 	Version: "v0.4.0",
