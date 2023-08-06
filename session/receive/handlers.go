@@ -15,12 +15,14 @@ import (
 func (s *Session) HandleState() {
 	//print the state change
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
-		if state != webrtc.ICEConnectionStateClosed {
-			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
-		}
-		if state == webrtc.ICEConnectionStateDisconnected {
+		if state == webrtc.ICEConnectionStateFailed {
 			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 			s.done <- struct{}{}
+			return
+		}
+
+		if state != webrtc.ICEConnectionStateClosed {
+			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 		}
 	})
 

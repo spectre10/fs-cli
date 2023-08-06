@@ -78,15 +78,21 @@ func (s *Session) Connect() error {
 
 	<-s.consentChan
 
+	//wait for all the channels to be initialized.
+	<-s.channelsChan
+	
+	go s.transfer()
+	<-s.done
+	return nil
+}
+
+func (s *Session) transfer() {
+
 	// Initialize new mpb instance.
 	p := mpb.New(
 		// mpb.WithWidth(60),
 		mpb.WithRefreshRate(100 * time.Millisecond), //updates the stats every 100ms.
 	)
-
-	//wait for all the channels to be initialized.
-	<-s.channelsChan
-
 	s.globalStartTime = lib.Start()
 	wg := &sync.WaitGroup{}
 	wg.Add(int(s.channelsCnt))
@@ -144,12 +150,11 @@ func (s *Session) Connect() error {
 	lib.FinalStat(fileSize, s.globalStartTime)
 
 	//signal to the sender to close the connection.
-	err = s.controlChannel.SendText("1")
+	err := s.controlChannel.SendText("1")
 	if err != nil {
 		panic(err)
 	}
 	<-s.done
-	return nil
 }
 
 func (s *Session) fileWrite(proxyWriter io.WriteCloser, wg *sync.WaitGroup, i int) {
