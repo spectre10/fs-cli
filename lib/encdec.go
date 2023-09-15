@@ -23,7 +23,7 @@ func Encode(obj interface{}) (string, error) {
 	if err != nil {
 		panic(err)
 	}
-	if _, err := gz.Write([]byte(b)); err != nil {
+	if _, err := gz.Write(b); err != nil {
 		panic(err)
 	}
 	if err := gz.Close(); err != nil {

@@ -62,6 +62,10 @@ To find your IP address,
 fs-cli findip
 ```
 
+## Future Steps
+
+* (**On-going**) Add a web UI which can be hosted locally. (Single Binary.)
+
 -----------------------------------
 ## References
 * [pion/webrtc](https://github.com/pion/webrtc)
