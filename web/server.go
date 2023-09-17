@@ -1,26 +1,42 @@
 package web
 
 import (
-	"embed"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 )
 
-var (
-	//go:embed static/index/*
-	staticIndex embed.FS
-)
+func StartServer(add string) {
+	err := initLogger()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = initFS()
+	if err != nil {
+		logger.Error(fmt.Sprint(err))
+	}
 
-func StartServer(add string) error {
 	app := fiber.New()
+	app.Use("/send", filesystem.New(filesystem.Config{
+		Root:  http.FS(staticSend),
+		Index: "send.html",
+	}))
+	app.Use("/receive", filesystem.New(filesystem.Config{
+		Root:  http.FS(staticReceive),
+		Index: "receive.html",
+	}))
 	app.Use("/", filesystem.New(filesystem.Config{
 		Root:  http.FS(staticIndex),
-		Index: "static/index/index.html",
+		Index: "index.html",
 	}))
+
 	if add == "" {
 		add = ":8080"
 	}
-	return app.Listen(add)
+	err = app.Listen(add)
+	logger.Error(fmt.Sprint(err))
+	shutdown()
 }
