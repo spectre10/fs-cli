@@ -2,9 +2,7 @@ package web
 
 import (
 	"embed"
-	"fmt"
 	"io/fs"
-	"log/slog"
 	"os"
 )
 
@@ -15,7 +13,6 @@ var (
 	staticSend    fs.FS
 	staticReceive fs.FS
 	logFile       *os.File
-	logger        *slog.Logger
 )
 
 func initFS() error {
@@ -35,21 +32,4 @@ func initFS() error {
 		return err
 	}
 	return nil
-}
-
-func initLogger() error {
-	var err error
-	logFile, err = os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		return err
-	}
-	logger = slog.New(slog.NewTextHandler(logFile, nil))
-	return nil
-}
-
-func shutdown() {
-	err := logFile.Close()
-	if err != nil {
-		logger.Error(fmt.Sprint(err))
-	}
 }

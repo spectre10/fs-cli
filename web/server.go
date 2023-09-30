@@ -1,22 +1,26 @@
 package web
 
 import (
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 )
 
 func StartServer(add string) {
-	err := initLogger()
+	var err error
+	logFile, err = os.OpenFile("log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("error opening file: %v", err)
 	}
+	defer logFile.Close()
+	logger := slog.New(slog.NewTextHandler(logFile, nil))
 	err = initFS()
 	if err != nil {
-		logger.Error(fmt.Sprint(err))
+		logger.Error("%s", err)
+		return
 	}
 
 	app := fiber.New()
@@ -36,7 +40,5 @@ func StartServer(add string) {
 	if add == "" {
 		add = ":8080"
 	}
-	err = app.Listen(add)
-	logger.Error(fmt.Sprint(err))
-	shutdown()
+	logger.Error("%s", app.Listen(add))
 }

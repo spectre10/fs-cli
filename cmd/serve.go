@@ -5,9 +5,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// serverCmd represents the server command
-var serverCmd = &cobra.Command{
-	Use:   "server",
+// serveCmd represents the server command
+var serveCmd = &cobra.Command{
+	Use:   "serve",
 	Short: "start a local server for browser-based UI",
 	Long: `start a UI hosted at a particular port.
 	for defining port use the "--address" flag
@@ -23,7 +23,7 @@ var serverCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(serverCmd)
+	rootCmd.AddCommand(serveCmd)
 
-	serverCmd.PersistentFlags().String("address", "", "A help for foo")
+	serveCmd.PersistentFlags().String("address", "", "A help for foo")
 }
