@@ -3,7 +3,7 @@ module github.com/spectre10/fs-cli
 go 1.21
 
 require (
-	github.com/gofiber/fiber/v2 v2.49.2
+	github.com/gofiber/fiber/v2 v2.50.0
 	github.com/pion/webrtc/v3 v3.2.21
 	github.com/spf13/cobra v1.7.0
 	github.com/vbauerster/mpb/v8 v8.6.1
