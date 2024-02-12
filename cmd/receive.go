@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/spectre10/fs-cli/lib"
 	"github.com/spectre10/fs-cli/session/receive"
 	"github.com/spf13/cobra"
 )
@@ -12,12 +13,25 @@ var receiveCmd = &cobra.Command{
 	Long: `Receive a file via this command. 
     For example,
     $ fs-cli receive`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		session := receive.NewSession()
-		err := session.Connect()
+		err := session.CreateConnection()
 		if err != nil {
-			panic(err)
+			return err
 		}
+
+		answer, err := lib.SDPPrompt()
+		if err != nil {
+			return err
+		}
+
+		err = session.PrintSDP(answer)
+		if err != nil {
+			return err
+		}
+
+		err = session.Connect(answer)
+		return err
 	},
 }
 

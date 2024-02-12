@@ -15,7 +15,7 @@ import (
 )
 
 // Prints the state change.
-func (s *Session) HandleState() {
+func (s *Session) handleState() {
 	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
 		if state != webrtc.ICEConnectionStateClosed {
 			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
@@ -27,7 +27,7 @@ func (s *Session) HandleState() {
 }
 
 // When control datachannel opens.
-func (s *Session) Handleopen() func() {
+func (s *Session) handleopen() func() {
 	return func() {
 		fmt.Println("Channel opened!")
 
@@ -41,7 +41,7 @@ func (s *Session) Handleopen() func() {
 		concentCheck := <-s.consent
 		if !concentCheck {
 			fmt.Println("\nReceiver denied to receive.")
-			s.Close(false)
+			s.close(false)
 			return
 		}
 
@@ -121,7 +121,7 @@ func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int, 
 		default:
 			// Only send packet if the Buffered amount is less than the threshold.
 			if s.channels[i].DC.BufferedAmount() < s.bufferThreshold {
-				err := s.SendPacket(proxyReader, s.channels[i])
+				err := s.sendPacket(proxyReader, s.channels[i])
 				if err != nil {
 					// if reached End Of File
 					if err == io.EOF {
@@ -136,7 +136,7 @@ func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int, 
 }
 
 // Sends the packet.
-func (s *Session) SendPacket(proxyReader io.ReadCloser, doc *lib.Document) error {
+func (s *Session) sendPacket(proxyReader io.ReadCloser, doc *lib.Document) error {
 	// Read the file to the packet array of size 16KiB.
 	n, err := proxyReader.Read(doc.Packet)
 	if err != nil {
@@ -158,7 +158,7 @@ func (s *Session) SendPacket(proxyReader io.ReadCloser, doc *lib.Document) error
 
 // Closes the channels.
 // Ugly.
-func (s *Session) Close(closehandler bool) {
+func (s *Session) close(closehandler bool) {
 	//closehandler indicates if the call came from the listener or it was explicitly called.
 	//only handle if the function was explicitly called.
 	if !closehandler {
@@ -192,8 +192,8 @@ func (s *Session) Close(closehandler bool) {
 }
 
 // Handle the closing of control channel.
-func (s *Session) Handleclose() func() {
+func (s *Session) handleclose() func() {
 	return func() {
-		s.Close(true)
+		s.close(true)
 	}
 }

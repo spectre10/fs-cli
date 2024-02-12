@@ -10,6 +10,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/pion/webrtc/v3"
 )
 
 // encodes the SDP object into base64 and returns the string
@@ -56,17 +58,7 @@ func Decode(in string, obj interface{}) error {
 	return json.Unmarshal(data, obj)
 }
 
-// Reads the SDP from terminal.
-// Currently maybe not working on windows.
 func ReadSDP() (string, error) {
-	// var sdpString string
-	// _, err := fmt.Scanln(&sdpString)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// sdpString = strings.TrimSpace(sdpString)
-	// return sdpString, nil
-
 	r := bufio.NewReader(os.Stdin)
 	var in string
 	for {
@@ -85,4 +77,23 @@ func ReadSDP() (string, error) {
 
 	fmt.Println("")
 	return in, nil
+}
+
+func SDPPrompt() (webrtc.SessionDescription, error) {
+	fmt.Println("Paste the remote SDP: ")
+
+	//take remote SDP in answer
+	answer := webrtc.SessionDescription{}
+	for {
+		text, err := ReadSDP()
+		if err != nil {
+			return answer, err
+		}
+		sdp := text
+		if err := Decode(sdp, &answer); err == nil {
+			break
+		}
+		fmt.Println("Invalid SDP. Enter again.")
+	}
+	return answer, nil
 }

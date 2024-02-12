@@ -10,49 +10,29 @@ import (
 	"github.com/spectre10/fs-cli/lib"
 )
 
-// Connects clients and creates datachannels.
-func (s *Session) Connect(paths []string) error {
-	err := s.CreateConnection()
+func (s *Session) SetupConnection(paths []string) error {
+	err := s.createConnection()
 	if err != nil {
 		return err
 	}
-	err = s.CreateControlChannel()
+	err = s.createControlChannel()
 	if err != nil {
 		return err
 	}
 
 	//here len(paths) is number of files to be sent
 	for i := 0; i < len(paths); i++ {
-		err = s.CreateTransferChannel(paths[i], i)
+		err = s.createTransferChannel(paths[i], i)
 		if err != nil {
 			return err
 		}
 	}
+	return nil
+}
 
-	err = s.Createoffer()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Paste the remote SDP: ")
-
-	var text string
-
-	//take remote SDP in answer
-	answer := webrtc.SessionDescription{}
-	for {
-		text, err = lib.ReadSDP()
-		if err != nil {
-			return err
-		}
-		sdp := text
-		if err := lib.Decode(sdp, &answer); err == nil {
-			break
-		}
-		fmt.Println("Invalid SDP. Enter again.")
-	}
-
-	err = s.peerConnection.SetRemoteDescription(answer)
+// Connects clients.
+func (s *Session) Connect(answer webrtc.SessionDescription) error {
+	err := s.peerConnection.SetRemoteDescription(answer)
 	if err != nil {
 		return err
 	}
@@ -63,7 +43,7 @@ func (s *Session) Connect(paths []string) error {
 }
 
 // Creates WebRTC PeerConnection.
-func (s *Session) CreateConnection() error {
+func (s *Session) createConnection() error {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
@@ -76,12 +56,12 @@ func (s *Session) CreateConnection() error {
 		return err
 	}
 	s.peerConnection = peerConnection
-	s.HandleState()
+	s.handleState()
 	return nil
 }
 
 // Creates Datachannel for file transfer.
-func (s *Session) CreateTransferChannel(path string, i int) error {
+func (s *Session) createTransferChannel(path string, i int) error {
 	var err error
 	if err != nil {
 		panic(err)
@@ -146,7 +126,7 @@ func (s *Session) CreateTransferChannel(path string, i int) error {
 }
 
 // Creates control datachannel for communicating consent and signaling.
-func (s *Session) CreateControlChannel() error {
+func (s *Session) createControlChannel() error {
 	ordered := true
 	mplt := uint16(5000)
 	channel, err := s.peerConnection.CreateDataChannel("control", &webrtc.DataChannelInit{
@@ -157,8 +137,8 @@ func (s *Session) CreateControlChannel() error {
 		return err
 	}
 	s.controlChannel = channel
-	s.controlChannel.OnOpen(s.Handleopen())
-	s.controlChannel.OnClose(s.Handleclose())
+	s.controlChannel.OnOpen(s.handleopen())
+	s.controlChannel.OnClose(s.handleclose())
 	s.controlChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
 		if !s.consentDone {
 			if string(msg.Data) == "n" {
@@ -173,17 +153,16 @@ func (s *Session) CreateControlChannel() error {
 		signal := string(msg.Data)
 		// indicates that the operation is complete.
 		if signal == "1" {
-			s.Close(false)
+			s.close(false)
 		}
 	})
 	return nil
 }
 
-// Creates offer and encodes it in base64.
-func (s *Session) Createoffer() error {
+func (s *Session) GenOffer() (string, error) {
 	offer, err := s.peerConnection.CreateOffer(nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	s.gatherDone = webrtc.GatheringCompletePromise(s.peerConnection)
 	err = s.peerConnection.SetLocalDescription(offer)
@@ -191,13 +170,19 @@ func (s *Session) Createoffer() error {
 	offer2 := s.peerConnection.LocalDescription()
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	encoded, err := lib.Encode(offer2)
+	return encoded, err
+}
+
+// Creates offer and encodes it in base64.
+func (s *Session) PrintOffer() error {
+	offer, err := s.GenOffer()
 	if err != nil {
 		return err
 	}
-	fmt.Println(encoded)
+	fmt.Println(offer)
 	return nil
 }

@@ -103,7 +103,7 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 		for i := 0; i < len(s.channels); i++ {
 			fmt.Printf(" %s ", s.channels[i].Name)
 		}
-		fmt.Printf("\nDo you want to receive the above files? [Y/N] ")
+		fmt.Printf("\nDo you want to receive the above files? [Y/n] ")
 		fmt.Scanln(&consent)
 		fmt.Println()
 
@@ -118,13 +118,13 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 			if err != nil {
 				panic(err)
 			}
-			s.consentChan <- struct{}{}
+			s.ConsentChan <- struct{}{}
 		}
 	})
 }
 
 // Closes all the go channels.(effectively closing the operation)
 func (s *Session) close(isOnClose bool) {
-	close(s.consentChan)
+	close(s.ConsentChan)
 	close(s.done)
 }
