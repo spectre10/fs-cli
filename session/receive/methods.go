@@ -3,7 +3,6 @@ package receive
 import (
 	"fmt"
 	"io"
-	"strings"
 	"sync"
 	"time"
 
@@ -34,53 +33,12 @@ func (s *Session) CreateConnection() error {
 }
 
 // Connects the clients and starts the process of writing to the file.
-func (s *Session) Connect() error {
-	err := s.CreateConnection()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Paste the SDP:")
-	var input string
-	fmt.Scanln(&input)
-	input = strings.TrimSpace(input)
-
-	offer := webrtc.SessionDescription{}
-
-	// Decode from base64 to SDP
-	err = lib.Decode(input, &offer)
-	if err != nil {
-		panic(err)
-	}
-	err = s.peerConnection.SetRemoteDescription(offer)
-	if err != nil {
-		panic(err)
-	}
-
-	answer, err := s.peerConnection.CreateAnswer(nil)
-	if err != nil {
-		panic(err)
-	}
-
-	err = s.peerConnection.SetLocalDescription(answer)
-	if err != nil {
-		panic(err)
-	}
-
-	<-s.gatherDone
-
-	//Encode the SDP to base64
-	sdp, err := lib.Encode(s.peerConnection.LocalDescription())
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(sdp)
-
+func (s *Session) Connect(offer webrtc.SessionDescription) error {
 	<-s.consentChan
 
 	//wait for all the channels to be initialized.
 	<-s.channelsChan
-	
+
 	go s.transfer()
 	<-s.done
 	return nil
@@ -187,4 +145,37 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, wg *sync.WaitGroup, i in
 			}
 		}
 	}
+}
+
+func (s *Session) GenSDP(offer webrtc.SessionDescription) (string, error) {
+	var sdp string
+	err := s.peerConnection.SetRemoteDescription(offer)
+	if err != nil {
+		return sdp, err
+	}
+
+	answer, err := s.peerConnection.CreateAnswer(nil)
+	if err != nil {
+		return sdp, err
+	}
+
+	err = s.peerConnection.SetLocalDescription(answer)
+	if err != nil {
+		return sdp, err
+	}
+	<-s.gatherDone
+
+	//Encode the SDP to base64
+	sdp, err = lib.Encode(s.peerConnection.LocalDescription())
+	return sdp, err
+}
+
+func (s *Session) PrintSDP(offer webrtc.SessionDescription) error {
+	sdp, err := s.GenSDP(offer)
+	if err != nil {
+		return err
+	}
+	fmt.Println(sdp)
+	return nil
+
 }

@@ -21,7 +21,7 @@ type Session struct {
 	gatherDone <-chan struct{} //for waiting until all the ICECandidates are found.
 	done       chan struct{}   //when operation ends.
 
-	consentChan     chan struct{} //receiving consent
+	ConsentChan     chan struct{} //receiving consent
 	
 	globalStartTime int64         //start time of the transaction
 }
@@ -30,7 +30,7 @@ type Session struct {
 func NewSession() *Session {
 	return &Session{
 		done:        make(chan struct{}),
-		consentChan: make(chan struct{}),
+		ConsentChan: make(chan struct{}),
 		channels: make([]struct {
 			*lib.Document
 			msgChan chan []byte
