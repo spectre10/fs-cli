@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spectre10/fs-cli/lib"
 	"github.com/spectre10/fs-cli/session/receive"
 	"github.com/spf13/cobra"
@@ -29,6 +31,15 @@ var receiveCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		<-session.MetadataReady
+		for i := 0; i < len(session.Channels); i++ {
+			fmt.Printf(" %s ", session.Channels[i].Name)
+		}
+		var consent byte
+		fmt.Printf("\nDo you want to receive the above files? [Y/n] ")
+		fmt.Scanln(&consent)
+		session.ConsentInput <- consent
+		fmt.Println()
 
 		err = session.Connect(answer)
 		return err

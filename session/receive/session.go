@@ -8,9 +8,9 @@ import (
 // Receiver's session struct to manage Datachannels, PeerConnection, Go Signaling Channels etc.
 type Session struct {
 	peerConnection *webrtc.PeerConnection
-	
+
 	controlChannel *webrtc.DataChannel //handling consent and metadata
-	channels       []struct {
+	Channels       []struct {
 		*lib.Document
 		msgChan chan []byte // This is for sending the packets received via the handler function to the io.writer.
 	}
@@ -21,17 +21,21 @@ type Session struct {
 	gatherDone <-chan struct{} //for waiting until all the ICECandidates are found.
 	done       chan struct{}   //when operation ends.
 
-	ConsentChan     chan struct{} //receiving consent
-	
-	globalStartTime int64         //start time of the transaction
+	consentChan   chan struct{} //receiving consent
+	ConsentInput  chan byte
+	MetadataReady chan struct{} //when metadata is received.
+
+	globalStartTime int64 //start time of the transaction
 }
 
 // Constructs new session object and returns it with some default values.
 func NewSession() *Session {
 	return &Session{
-		done:        make(chan struct{}),
-		ConsentChan: make(chan struct{}),
-		channels: make([]struct {
+		done:          make(chan struct{}),
+		consentChan:   make(chan struct{}),
+		ConsentInput:  make(chan byte, 1),
+		MetadataReady: make(chan struct{}, 1),
+		Channels: make([]struct {
 			*lib.Document
 			msgChan chan []byte
 		}, 0),

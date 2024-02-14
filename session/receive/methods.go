@@ -56,11 +56,11 @@ func (s *Session) transfer() {
 	wg.Add(int(s.channelsCnt))
 	for i := 0; i < int(s.channelsCnt); i++ {
 		// because i's value changes in decor.Any's callback function.
-		doc := s.channels[i]
-		bar := p.AddBar(int64(s.channels[i].Size),
+		doc := s.Channels[i]
+		bar := p.AddBar(int64(s.Channels[i].Size),
 			mpb.BarFillerClearOnComplete(), // Make the progress bar disappear on completion.
 			mpb.PrependDecorators(
-				decor.Name(fmt.Sprintf("Receiving '%s': ", s.channels[i].Name), decor.WCSyncSpaceR),
+				decor.Name(fmt.Sprintf("Receiving '%s': ", s.Channels[i].Name), decor.WCSyncSpaceR),
 
 				//Make the size counter disapper on completion.
 				// decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
@@ -89,8 +89,8 @@ func (s *Session) transfer() {
 			),
 		)
 		//mpb's proxyWriter to automatically handle the progress bar and stats
-		proxyWriter := bar.ProxyWriter(s.channels[i].File)
-		s.channels[i].StartTime = time.Now().UnixMilli()
+		proxyWriter := bar.ProxyWriter(s.Channels[i].File)
+		s.Channels[i].StartTime = time.Now().UnixMilli()
 		go s.fileWrite(proxyWriter, wg, i)
 	}
 
@@ -102,7 +102,7 @@ func (s *Session) transfer() {
 	//get total size of all the files.
 	var fileSize uint64 = 0
 	for i := 0; i < int(s.channelsCnt); i++ {
-		fileSize += s.channels[i].Size
+		fileSize += s.Channels[i].Size
 	}
 
 	lib.FinalStat(fileSize, s.globalStartTime)
@@ -122,13 +122,13 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, wg *sync.WaitGroup, i in
 		select {
 		case <-signalChan:
 			//signal the completion of a particular file.
-			err := s.channels[i].DC.SendText("completed")
+			err := s.Channels[i].DC.SendText("completed")
 			if err != nil {
 				panic(err)
 			}
 			wg.Done()
 			return
-		case msg := <-s.channels[i].msgChan:
+		case msg := <-s.Channels[i].msgChan:
 			receivedBytes += uint64(len(msg))
 			//write packet
 			if _, err := proxyWriter.Write(msg); err != nil {
@@ -136,7 +136,7 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, wg *sync.WaitGroup, i in
 			}
 
 			//If all the packets are received, close the writer and go to the first case of select.
-			if receivedBytes == s.channels[i].Size {
+			if receivedBytes == s.Channels[i].Size {
 				err := proxyWriter.Close()
 				if err != nil {
 					panic(err)

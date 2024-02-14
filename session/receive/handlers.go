@@ -34,7 +34,7 @@ func (s *Session) HandleState() {
 			s.assign(dc)
 		} else {
 			//append new file and construct Document struct.
-			s.channels = append(s.channels, struct {
+			s.Channels = append(s.Channels, struct {
 				*lib.Document
 				msgChan chan []byte
 			}{
@@ -46,20 +46,20 @@ func (s *Session) HandleState() {
 				msgChan: make(chan []byte, 128),
 			})
 
-			i := len(s.channels) - 1
-			s.channels[i].DC = dc
-			s.channels[i].DC.OnClose(func() {
+			i := len(s.Channels) - 1
+			s.Channels[i].DC = dc
+			s.Channels[i].DC.OnClose(func() {
 				// fmt.Println("Channel", dc.Label(), "Closed")
 			})
-			s.channels[i].DC.OnMessage(func(msg webrtc.DataChannelMessage) {
+			s.Channels[i].DC.OnMessage(func(msg webrtc.DataChannelMessage) {
 				//first receive metadata of files(name,size).
-				if !s.channels[i].MetadataDone {
-					err := json.Unmarshal(msg.Data, &s.channels[i].Metadata)
+				if !s.Channels[i].MetadataDone {
+					err := json.Unmarshal(msg.Data, &s.Channels[i].Metadata)
 					if err != nil {
 						panic(err)
 					}
-					s.channels[i].MetadataDone = true
-					s.channels[i].File, err = os.OpenFile(s.channels[i].Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+					s.Channels[i].MetadataDone = true
+					s.Channels[i].File, err = os.OpenFile(s.Channels[i].Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 
 					//increment the channelsDone counter
 					//atomic write is used avoid race conditions due to multiple channels being intiallized at once.
@@ -68,7 +68,7 @@ func (s *Session) HandleState() {
 						panic(err)
 					}
 				} else {
-					s.channels[i].msgChan <- msg.Data
+					s.Channels[i].msgChan <- msg.Data
 				}
 			})
 		}
@@ -97,18 +97,13 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 		for atomic.LoadInt32(&s.channelsCnt) != atomic.LoadInt32(&s.channelsDone) {
 		}
 		s.channelsChan <- struct{}{}
+		s.MetadataReady <- struct{}{}
 
 		//take consent from receiver.
-		var consent string
-		for i := 0; i < len(s.channels); i++ {
-			fmt.Printf(" %s ", s.channels[i].Name)
-		}
-		fmt.Printf("\nDo you want to receive the above files? [Y/n] ")
-		fmt.Scanln(&consent)
-		fmt.Println()
+		consent:= <-s.ConsentInput
 
 		//send appropriate consent to sender.
-		if consent == "n" || consent == "N" {
+		if consent == 'n' || consent == 'N' {
 			err := s.controlChannel.SendText("n")
 			if err != nil {
 				panic(err)
@@ -118,13 +113,13 @@ func (s *Session) assign(dc *webrtc.DataChannel) {
 			if err != nil {
 				panic(err)
 			}
-			s.ConsentChan <- struct{}{}
+			s.consentChan <- struct{}{}
 		}
 	})
 }
 
 // Closes all the go channels.(effectively closing the operation)
 func (s *Session) close(isOnClose bool) {
-	close(s.ConsentChan)
+	close(s.consentChan)
 	close(s.done)
 }
