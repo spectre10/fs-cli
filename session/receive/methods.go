@@ -91,7 +91,7 @@ func (s *Session) transfer() {
 		//mpb's proxyWriter to automatically handle the progress bar and stats
 		proxyWriter := bar.ProxyWriter(s.Channels[i].File)
 		s.Channels[i].StartTime = time.Now().UnixMilli()
-		go s.fileWrite(proxyWriter, wg, i)
+		go s.FileWrite(proxyWriter, wg, i)
 	}
 
 	//wait for all the bars to complete.
@@ -115,7 +115,7 @@ func (s *Session) transfer() {
 	<-s.done
 }
 
-func (s *Session) fileWrite(proxyWriter io.WriteCloser, wg *sync.WaitGroup, i int) {
+func (s *Session) FileWrite(proxyWriter io.WriteCloser, wg *sync.WaitGroup, i int) {
 	var receivedBytes uint64 = 0
 	signalChan := make(chan struct{}, 1)
 	for {
