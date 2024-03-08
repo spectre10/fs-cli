@@ -101,14 +101,14 @@ func (s *Session) handleopen() func() {
 			//it is a wrapper of io.Reader.
 			proxyReader := bar.ProxyReader(s.channels[i].File)
 			s.channels[i].StartTime = time.Now().UnixMilli()
-			go s.sendFile(s.channels[i], proxyReader, i, wg)
+			go s.sendFile(proxyReader, i, wg)
 		}
 		p.Wait()
 		wg.Wait()
 	}
 }
 
-func (s *Session) sendFile(doc *lib.Document, proxyReader io.ReadCloser, i int, wg *sync.WaitGroup) {
+func (s *Session) sendFile(proxyReader io.ReadCloser, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer proxyReader.Close()
 

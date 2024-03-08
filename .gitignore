@@ -15,6 +15,7 @@
 *.out
 
 out/
+gui/gui
 
 test.tar.gz
 
