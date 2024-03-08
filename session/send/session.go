@@ -7,7 +7,7 @@ import (
 
 // To manage the datachannels and PeerConnection.
 type Session struct {
-	peerConnection *webrtc.PeerConnection
+	PeerConnection *webrtc.PeerConnection
 
 	controlChannel *webrtc.DataChannel
 	controlDone    chan struct{}

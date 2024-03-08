@@ -13,7 +13,7 @@ var rootCmd = &cobra.Command{
 	Use:     "fs-cli",
 	Short:   "Peer-to-Peer filesharing CLI application",
 	Long:    `A Peer-to-Peer multi-threaded filesharing CLI app using WebRTC.`,
-	Version: "v0.4.0",
+	Version: "v0.5.1",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
