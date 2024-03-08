@@ -20,6 +20,6 @@ func FinalStat(TotalAmount uint64, startTime int64) {
 
 	fmt.Printf("\nStats:\n")
 	fmt.Printf("Time Taken: %.2f seconds\n", timeDiff)
-	fmt.Printf("Total Amount Transfered: % .2f \n", decor.SizeB1024(TotalAmount))
+	fmt.Printf("Total Amount Transferred: % .2f \n", decor.SizeB1024(TotalAmount))
 	fmt.Printf("Average Speed: %.2f MiB/s\n", totalAmountInMiB/timeDiff)
 }

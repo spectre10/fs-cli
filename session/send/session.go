@@ -19,7 +19,7 @@ type Session struct {
 	gatherDone <-chan struct{}
 	stop       chan struct{}
 
-	channels     []*lib.Document
+	Channels     []*lib.Document
 	channelsCnt  int32
 	channelsDone int32
 
@@ -37,7 +37,7 @@ func NewSession(numberOfFiles int) *Session {
 		bufferThreshold: 512 * 1024, //512KiB
 		controlDone:     make(chan struct{}, 1),
 		stop:            make(chan struct{}, 1),
-		channels:        make([]*lib.Document, numberOfFiles),
+		Channels:        make([]*lib.Document, numberOfFiles),
 		channelsCnt:     0,
 		channelsDone:    0,
 		consent:         make(chan bool),
