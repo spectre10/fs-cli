@@ -81,7 +81,7 @@ func (s *Session) createTransferChannel(path string, i int) error {
 		Size: uint64(f.Size()),
 	}
 	//create new document struct.
-	s.channels[i] = &lib.Document{
+	s.Channels[i] = &lib.Document{
 		Metadata: &metadata,
 		Packet:   make([]byte, 4*4096),
 		DCdone:   make(chan struct{}, 1),
@@ -92,9 +92,9 @@ func (s *Session) createTransferChannel(path string, i int) error {
 	//Ordered property maintains the order of the packets while transferring.
 	ordered := true
 	//mplt means MaxPacketLifeTime.
-	//It is the time in Miliseconds during which if the sender does not receive acknowledgement of the packet, it will retransmit.
+	//It is the time in Milliseconds during which if the sender does not receive acknowledgement of the packet, it will retransmit.
 	mplt := uint16(5000)
-	s.channels[i].DC, err = s.PeerConnection.CreateDataChannel(fmt.Sprintf("dc%d", i), &webrtc.DataChannelInit{
+	s.Channels[i].DC, err = s.PeerConnection.CreateDataChannel(fmt.Sprintf("dc%d", i), &webrtc.DataChannelInit{
 		Ordered:           &ordered,
 		MaxPacketLifeTime: &mplt,
 	})
@@ -103,23 +103,23 @@ func (s *Session) createTransferChannel(path string, i int) error {
 	}
 
 	//first send the metadata.
-	s.channels[i].DC.OnOpen(func() {
-		md, err := json.Marshal(s.channels[i].Metadata)
+	s.Channels[i].DC.OnOpen(func() {
+		md, err := json.Marshal(s.Channels[i].Metadata)
 		if err != nil {
 			panic(err)
 		}
-		err = s.channels[i].DC.Send(md)
+		err = s.Channels[i].DC.Send(md)
 		if err != nil {
 			panic(err)
 		}
-		close(s.channels[i].DCdone)
+		close(s.Channels[i].DCdone)
 		atomic.AddInt32(&s.channelsDone, 1)
 	})
 
 	//This indicates that transfer is done on this datachannel.
-	s.channels[i].DC.OnMessage(func(msg webrtc.DataChannelMessage) {
+	s.Channels[i].DC.OnMessage(func(msg webrtc.DataChannelMessage) {
 		if string(msg.Data) == "completed" {
-			s.channels[i].DCclose <- struct{}{}
+			s.Channels[i].DCclose <- struct{}{}
 		}
 	})
 	return nil

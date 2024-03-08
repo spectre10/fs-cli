@@ -32,7 +32,7 @@ func (s *Session) handleopen() func() {
 		fmt.Println("Channel opened!")
 
 		//Sends the number of files to be transferred.
-		err := s.controlChannel.SendText(fmt.Sprintf("%d", len(s.channels)))
+		err := s.controlChannel.SendText(fmt.Sprintf("%d", len(s.Channels)))
 		if err != nil {
 			panic(err)
 		}
@@ -46,8 +46,8 @@ func (s *Session) handleopen() func() {
 		}
 
 		//wait for all the transfer datachannels to be initiallized.
-		//atomic is used to avoid race conditions due to the fact that s.channelsDone would be incrementing at the same time.
-		for atomic.LoadInt32(&s.channelsDone) != int32(len(s.channels)) {
+		//atomic is used to avoid race conditions due to the fact that s.ChannelsDone would be incrementing at the same time.
+		for atomic.LoadInt32(&s.channelsDone) != int32(len(s.Channels)) {
 		}
 
 		p := mpb.New(
@@ -58,16 +58,16 @@ func (s *Session) handleopen() func() {
 		s.globalStartTime = lib.Start()
 
 		wg := &sync.WaitGroup{}
-		wg.Add(len(s.channels))
-		for i := 0; i < len(s.channels); i++ {
+		wg.Add(len(s.Channels))
+		for i := 0; i < len(s.Channels); i++ {
 			//This is because in decor.Any's callback function, i's value changes (idk why!)
-			doc := s.channels[i]
+			doc := s.Channels[i]
 
-			bar := p.AddBar(int64(s.channels[i].Size),
+			bar := p.AddBar(int64(s.Channels[i].Size),
 				mpb.BarFillerClearOnComplete(), //Clears the bar on completion.
 				mpb.PrependDecorators(
 					//WCSyncSpaceR synchronizes the margin between multiple bars.
-					decor.Name(fmt.Sprintf("Sending '%s': ", s.channels[i].Name), decor.WCSyncSpaceR),
+					decor.Name(fmt.Sprintf("Sending '%s': ", s.Channels[i].Name), decor.WCSyncSpaceR),
 
 					//clear byte counter on completion.
 					// decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
@@ -99,8 +99,8 @@ func (s *Session) handleopen() func() {
 
 			//proxyReader handles the stats(byte counter, percentage) automatically.
 			//it is a wrapper of io.Reader.
-			proxyReader := bar.ProxyReader(s.channels[i].File)
-			s.channels[i].StartTime = time.Now().UnixMilli()
+			proxyReader := bar.ProxyReader(s.Channels[i].File)
+			s.Channels[i].StartTime = time.Now().UnixMilli()
 			go s.SendFile(proxyReader, i, wg)
 		}
 		p.Wait()
@@ -116,12 +116,12 @@ func (s *Session) SendFile(proxyReader io.ReadCloser, i int, wg *sync.WaitGroup)
 	for {
 		select {
 		case <-eof_chan:
-			<-s.channels[i].DCclose
+			<-s.Channels[i].DCclose
 			return
 		default:
 			// Only send packet if the Buffered amount is less than the threshold.
-			if s.channels[i].DC.BufferedAmount() < s.bufferThreshold {
-				err := s.sendPacket(proxyReader, s.channels[i])
+			if s.Channels[i].DC.BufferedAmount() < s.bufferThreshold {
+				err := s.sendPacket(proxyReader, s.Channels[i])
 				if err != nil {
 					// if reached End Of File
 					if err == io.EOF {
@@ -164,13 +164,13 @@ func (s *Session) close(closehandler bool) {
 	if !closehandler {
 		//get the total size of all the files.
 		var fileSize uint64 = 0
-		for i := 0; i < len(s.channels); i++ {
-			fileSize += s.channels[i].Size
+		for i := 0; i < len(s.Channels); i++ {
+			fileSize += s.Channels[i].Size
 		}
 
 		s.stop <- struct{}{}
-		for i := 0; i < len(s.channels); i++ {
-			err := s.channels[i].DC.Close()
+		for i := 0; i < len(s.Channels); i++ {
+			err := s.Channels[i].DC.Close()
 			if err != nil {
 				panic(err)
 			}
