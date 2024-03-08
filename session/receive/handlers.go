@@ -14,7 +14,7 @@ import (
 // Handle all the listeners.
 func (s *Session) HandleState() {
 	//print the state change
-	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
+	s.PeerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
 		if state == webrtc.ICEConnectionStateFailed {
 			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 			s.done <- struct{}{}
@@ -27,7 +27,7 @@ func (s *Session) HandleState() {
 	})
 
 	//On new DataChannel being created by sender.
-	s.peerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
+	s.PeerConnection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		if dc.Label() == "control" {
 			s.controlChannel = dc
 			//add listeners to control channel.
@@ -62,7 +62,7 @@ func (s *Session) HandleState() {
 					s.Channels[i].File, err = os.OpenFile(s.Channels[i].Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 
 					//increment the channelsDone counter
-					//atomic write is used avoid race conditions due to multiple channels being intiallized at once.
+					//atomic write is used avoid race conditions due to multiple channels being initiallized at once.
 					atomic.AddInt32(&s.channelsDone, 1)
 					if err != nil {
 						panic(err)

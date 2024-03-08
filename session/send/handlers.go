@@ -16,7 +16,7 @@ import (
 
 // Prints the state change.
 func (s *Session) handleState() {
-	s.peerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
+	s.PeerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
 		if state != webrtc.ICEConnectionStateClosed {
 			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 		}
@@ -75,7 +75,7 @@ func (s *Session) handleopen() func() {
 					//display the sent amount
 					//decor.SizeB1024 converts the amount into appropriate units of data (KiB,MiB,Gib)
 					decor.OnComplete(decor.Any(func(st decor.Statistics) string {
-						stats, _ := s.peerConnection.GetStats().GetDataChannelStats(doc.DC)
+						stats, _ := s.PeerConnection.GetStats().GetDataChannelStats(doc.DC)
 						return fmt.Sprintf("% .2f ", decor.SizeB1024(int64(stats.BytesSent-doc.DC.BufferedAmount())))
 					}, decor.WCSyncSpaceR), ""),
 
@@ -85,7 +85,7 @@ func (s *Session) handleopen() func() {
 						period := float64(time.Now().UnixMilli()-doc.StartTime) / 1000.0
 
 						//If the clients are disconnected, do not update the speed.
-						if s.peerConnection.ICEConnectionState() == webrtc.ICEConnectionStateDisconnected {
+						if s.PeerConnection.ICEConnectionState() == webrtc.ICEConnectionStateDisconnected {
 							return fmt.Sprintf("%.2f MiB/s", 0.0)
 						}
 						return fmt.Sprintf("%.2f MiB/s", amount/period)
@@ -176,7 +176,7 @@ func (s *Session) close(closehandler bool) {
 			}
 		}
 		s.controlChannel.Close()
-		err := s.peerConnection.Close()
+		err := s.PeerConnection.Close()
 		if err != nil {
 			panic(err)
 		}

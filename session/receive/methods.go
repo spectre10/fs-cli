@@ -26,8 +26,8 @@ func (s *Session) CreateConnection() error {
 	if err != nil {
 		return err
 	}
-	s.peerConnection = peerConnection
-	s.gatherDone = webrtc.GatheringCompletePromise(s.peerConnection)
+	s.PeerConnection = peerConnection
+	s.gatherDone = webrtc.GatheringCompletePromise(s.PeerConnection)
 	s.HandleState()
 	return nil
 }
@@ -62,13 +62,13 @@ func (s *Session) transfer() {
 			mpb.PrependDecorators(
 				decor.Name(fmt.Sprintf("Receiving '%s': ", s.Channels[i].Name), decor.WCSyncSpaceR),
 
-				//Make the size counter disapper on completion.
+				//Make the size counter disappear on completion.
 				// decor.OnComplete(decor.Counters(decor.SizeB1024(0), "% .2f / % .2f", decor.WCSyncSpaceR), ""),
 
 				//display the received amount
 				//decor.SizeB1024 converts the amount into appropriate units of data (KiB,MiB,Gib)
 				decor.OnComplete(decor.Any(func(st decor.Statistics) string {
-					stats, _ := s.peerConnection.GetStats().GetDataChannelStats(doc.DC)
+					stats, _ := s.PeerConnection.GetStats().GetDataChannelStats(doc.DC)
 					return fmt.Sprintf("% .2f ", decor.SizeB1024(int64(stats.BytesReceived)))
 				}, decor.WCSyncSpaceR), ""),
 
@@ -78,7 +78,7 @@ func (s *Session) transfer() {
 					period := float64(time.Now().UnixMilli()-doc.StartTime) / 1000.0
 
 					// If the clients are disconnected, do not update speed.
-					if s.peerConnection.ICEConnectionState() == webrtc.ICEConnectionStateDisconnected {
+					if s.PeerConnection.ICEConnectionState() == webrtc.ICEConnectionStateDisconnected {
 						return fmt.Sprintf("%.2f MiB/s", 0.0)
 					}
 					return fmt.Sprintf("%.2f MiB/s", amount/period)
@@ -149,24 +149,24 @@ func (s *Session) fileWrite(proxyWriter io.WriteCloser, wg *sync.WaitGroup, i in
 
 func (s *Session) GenSDP(offer webrtc.SessionDescription) (string, error) {
 	var sdp string
-	err := s.peerConnection.SetRemoteDescription(offer)
+	err := s.PeerConnection.SetRemoteDescription(offer)
 	if err != nil {
 		return sdp, err
 	}
 
-	answer, err := s.peerConnection.CreateAnswer(nil)
+	answer, err := s.PeerConnection.CreateAnswer(nil)
 	if err != nil {
 		return sdp, err
 	}
 
-	err = s.peerConnection.SetLocalDescription(answer)
+	err = s.PeerConnection.SetLocalDescription(answer)
 	if err != nil {
 		return sdp, err
 	}
 	<-s.gatherDone
 
 	//Encode the SDP to base64
-	sdp, err = lib.Encode(s.peerConnection.LocalDescription())
+	sdp, err = lib.Encode(s.PeerConnection.LocalDescription())
 	return sdp, err
 }
 

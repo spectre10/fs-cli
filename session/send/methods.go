@@ -32,7 +32,7 @@ func (s *Session) SetupConnection(paths []string) error {
 
 // Connects clients.
 func (s *Session) Connect(answer webrtc.SessionDescription) error {
-	err := s.peerConnection.SetRemoteDescription(answer)
+	err := s.PeerConnection.SetRemoteDescription(answer)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (s *Session) createConnection() error {
 	if err != nil {
 		return err
 	}
-	s.peerConnection = peerConnection
+	s.PeerConnection = peerConnection
 	s.handleState()
 	return nil
 }
@@ -94,7 +94,7 @@ func (s *Session) createTransferChannel(path string, i int) error {
 	//mplt means MaxPacketLifeTime.
 	//It is the time in Miliseconds during which if the sender does not receive acknowledgement of the packet, it will retransmit.
 	mplt := uint16(5000)
-	s.channels[i].DC, err = s.peerConnection.CreateDataChannel(fmt.Sprintf("dc%d", i), &webrtc.DataChannelInit{
+	s.channels[i].DC, err = s.PeerConnection.CreateDataChannel(fmt.Sprintf("dc%d", i), &webrtc.DataChannelInit{
 		Ordered:           &ordered,
 		MaxPacketLifeTime: &mplt,
 	})
@@ -129,7 +129,7 @@ func (s *Session) createTransferChannel(path string, i int) error {
 func (s *Session) createControlChannel() error {
 	ordered := true
 	mplt := uint16(5000)
-	channel, err := s.peerConnection.CreateDataChannel("control", &webrtc.DataChannelInit{
+	channel, err := s.PeerConnection.CreateDataChannel("control", &webrtc.DataChannelInit{
 		Ordered:           &ordered,
 		MaxPacketLifeTime: &mplt,
 	})
@@ -160,14 +160,14 @@ func (s *Session) createControlChannel() error {
 }
 
 func (s *Session) GenOffer() (string, error) {
-	offer, err := s.peerConnection.CreateOffer(nil)
+	offer, err := s.PeerConnection.CreateOffer(nil)
 	if err != nil {
 		return "", err
 	}
-	s.gatherDone = webrtc.GatheringCompletePromise(s.peerConnection)
-	err = s.peerConnection.SetLocalDescription(offer)
+	s.gatherDone = webrtc.GatheringCompletePromise(s.PeerConnection)
+	err = s.PeerConnection.SetLocalDescription(offer)
 	<-s.gatherDone
-	offer2 := s.peerConnection.LocalDescription()
+	offer2 := s.PeerConnection.LocalDescription()
 
 	if err != nil {
 		return "", err

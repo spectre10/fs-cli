@@ -7,7 +7,7 @@ import (
 
 // Receiver's session struct to manage Datachannels, PeerConnection, Go Signaling Channels etc.
 type Session struct {
-	peerConnection *webrtc.PeerConnection
+	PeerConnection *webrtc.PeerConnection
 
 	controlChannel *webrtc.DataChannel //handling consent and metadata
 	Channels       []struct {
