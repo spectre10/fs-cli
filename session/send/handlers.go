@@ -55,7 +55,7 @@ func (s *Session) handleopen() func() {
 			mpb.WithRefreshRate(100 * time.Millisecond),
 		)
 
-		s.globalStartTime = lib.Start()
+		s.GlobalStartTime = lib.Start()
 
 		wg := &sync.WaitGroup{}
 		wg.Add(len(s.Channels))
@@ -181,7 +181,7 @@ func (s *Session) close(closehandler bool) {
 			panic(err)
 		}
 
-		lib.FinalStat(fileSize, s.globalStartTime)
+		lib.FinalStat(fileSize, s.GlobalStartTime)
 
 		//wait for the receiver to receive the signal of closing the connection.
 		//other wise the receiver hangs and disconnects after no response.

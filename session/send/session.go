@@ -20,14 +20,14 @@ type Session struct {
 	stop       chan struct{}
 
 	Channels     []*lib.Document
-	channelsCnt  int32
+	ChannelsCnt  int32
 	channelsDone int32
 
 	consent     chan bool
 	consentDone bool
 	
 	//start time of the transaction
-	globalStartTime int64
+	GlobalStartTime int64
 }
 
 // Returns new Session object with some default values.
@@ -38,7 +38,7 @@ func NewSession(numberOfFiles int) *Session {
 		controlDone:     make(chan struct{}, 1),
 		stop:            make(chan struct{}, 1),
 		Channels:        make([]*lib.Document, numberOfFiles),
-		channelsCnt:     0,
+		ChannelsCnt:     0,
 		channelsDone:    0,
 		consent:         make(chan bool),
 		consentDone:     false,
