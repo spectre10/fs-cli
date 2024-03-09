@@ -63,9 +63,6 @@ func (s *Session) createConnection() error {
 // Creates Datachannel for file transfer.
 func (s *Session) createTransferChannel(path string, i int) error {
 	var err error
-	if err != nil {
-		panic(err)
-	}
 	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
