@@ -25,9 +25,13 @@ type Session struct {
 
 	consent     chan bool
 	consentDone bool
-	
-	//start time of the transaction
-	GlobalStartTime int64
+
+	// stats after finishing
+	GlobalStartTime        int64
+	TimeTakenSeconds       float64
+	AverageSpeedMiB        float64
+	TotalAmountTransferred string
+	StatsDone              chan struct{}
 }
 
 // Returns new Session object with some default values.
@@ -37,6 +41,7 @@ func NewSession(numberOfFiles int) *Session {
 		bufferThreshold: 512 * 1024, //512KiB
 		controlDone:     make(chan struct{}, 1),
 		stop:            make(chan struct{}, 1),
+		StatsDone:       make(chan struct{}, 1),
 		Channels:        make([]*lib.Document, numberOfFiles),
 		ChannelsCnt:     0,
 		channelsDone:    0,
