@@ -184,7 +184,7 @@ func (s *Session) close(closehandler bool) {
 		t, amount, speed := lib.GetStats(fileSize, s.GlobalStartTime)
 		s.TimeTakenSeconds = t
 		s.AverageSpeedMiB = speed
-		s.TotalAmountTransferred = amount.String()
+		s.TotalAmountTransferred = fmt.Sprintf("% .2f", amount)
 		s.StatsDone <- struct{}{}
 		fmt.Printf("\nStats:\n")
 		fmt.Printf("Time Taken: %.2f seconds\n", t)
