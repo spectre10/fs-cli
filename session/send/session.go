@@ -15,7 +15,7 @@ type Session struct {
 	//Maximum amount the buffer can store for each datachannel.
 	bufferThreshold uint64
 
-	done       chan struct{}
+	Done       chan struct{}
 	gatherDone <-chan struct{}
 	stop       chan struct{}
 
@@ -23,8 +23,8 @@ type Session struct {
 	ChannelsCnt  int32
 	channelsDone int32
 
-	consent     chan bool
-	consentDone bool
+	Consent     chan bool
+	ConsentDone bool
 
 	// stats after finishing
 	GlobalStartTime        int64
@@ -37,7 +37,7 @@ type Session struct {
 // Returns new Session object with some default values.
 func NewSession(numberOfFiles int) *Session {
 	return &Session{
-		done:            make(chan struct{}),
+		Done:            make(chan struct{}, 1),
 		bufferThreshold: 512 * 1024, //512KiB
 		controlDone:     make(chan struct{}, 1),
 		stop:            make(chan struct{}, 1),
@@ -45,7 +45,7 @@ func NewSession(numberOfFiles int) *Session {
 		Channels:        make([]*lib.Document, numberOfFiles),
 		ChannelsCnt:     0,
 		channelsDone:    0,
-		consent:         make(chan bool),
-		consentDone:     false,
+		Consent:         make(chan bool),
+		ConsentDone:     false,
 	}
 }

@@ -37,7 +37,10 @@ var receiveCmd = &cobra.Command{
 		}
 		var consent byte
 		fmt.Printf("\nDo you want to receive the above files? [Y/n] ")
-		fmt.Scanln(&consent)
+		_, err = fmt.Scanf("%c", &consent)
+		if err != nil {
+			return err
+		}
 		session.ConsentInput <- consent
 		fmt.Println()
 

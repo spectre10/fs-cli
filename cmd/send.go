@@ -39,6 +39,7 @@ var sendCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		<-session.Done
 		return nil
 	},
 }
