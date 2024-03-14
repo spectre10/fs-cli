@@ -36,9 +36,6 @@ func (s *Session) Connect(answer webrtc.SessionDescription) error {
 	if err != nil {
 		return err
 	}
-
-	<-s.done
-
 	return nil
 }
 
@@ -137,20 +134,20 @@ func (s *Session) createControlChannel() error {
 	s.controlChannel.OnOpen(s.handleopen())
 	s.controlChannel.OnClose(s.handleclose())
 	s.controlChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
-		if !s.consentDone {
+		if !s.ConsentDone {
 			if string(msg.Data) == "n" {
-				s.consent <- false
-				s.consentDone = true
+				s.Consent <- false
+				s.ConsentDone = true
 				return
 			}
-			s.consent <- true
-			s.consentDone = true
+			s.Consent <- true
+			s.ConsentDone = true
 			return
 		}
 		signal := string(msg.Data)
 		// indicates that the operation is complete.
 		if signal == "1" {
-			s.close(false)
+			s.close(false, true)
 		}
 	})
 	return nil

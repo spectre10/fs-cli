@@ -21,7 +21,7 @@ func (s *Session) handleState() {
 			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
 		}
 		if state == webrtc.ICEConnectionStateFailed {
-			s.done <- struct{}{}
+			s.close(false, false)
 		}
 	})
 }
@@ -38,10 +38,10 @@ func (s *Session) handleopen() func() {
 		}
 
 		fmt.Println("Waiting for receiver to accept the transfer...")
-		concentCheck := <-s.consent
+		concentCheck := <-s.Consent
 		if !concentCheck {
 			fmt.Println("\nReceiver denied to receive.")
-			s.close(false)
+			s.close(false, false)
 			return
 		}
 
@@ -158,7 +158,7 @@ func (s *Session) sendPacket(proxyReader io.ReadCloser, doc *lib.Document) error
 
 // Closes the channels.
 // Ugly.
-func (s *Session) close(closehandler bool) {
+func (s *Session) close(closehandler bool, consent bool) {
 	//closehandler indicates if the call came from the listener or it was explicitly called.
 	//only handle if the function was explicitly called.
 	if !closehandler {
@@ -181,27 +181,29 @@ func (s *Session) close(closehandler bool) {
 			panic(err)
 		}
 
-		t, amount, speed := lib.GetStats(fileSize, s.GlobalStartTime)
-		s.TimeTakenSeconds = t
-		s.AverageSpeedMiB = speed
-		s.TotalAmountTransferred = fmt.Sprintf("% .2f", amount)
-		s.StatsDone <- struct{}{}
-		fmt.Printf("\nStats:\n")
-		fmt.Printf("Time Taken: %.2f seconds\n", t)
-		fmt.Printf("Total Amount Transferred: % .2f \n", amount)
-		fmt.Printf("Average Speed: %.2f MiB/s\n", speed)
+		if consent {
+			t, amount, speed := lib.GetStats(fileSize, s.GlobalStartTime)
+			s.TimeTakenSeconds = t
+			s.AverageSpeedMiB = speed
+			s.TotalAmountTransferred = fmt.Sprintf("% .2f", amount)
+			s.StatsDone <- struct{}{}
+			fmt.Printf("\nStats:\n")
+			fmt.Printf("Time Taken: %.2f seconds\n", t)
+			fmt.Printf("Total Amount Transferred: % .2f \n", amount)
+			fmt.Printf("Average Speed: %.2f MiB/s\n", speed)
+		}
 
 		//wait for the receiver to receive the signal of closing the connection.
 		//other wise the receiver hangs and disconnects after no response.
 		time.Sleep(1 * time.Second)
 		fmt.Println("Connection Closed!")
-		close(s.done)
+		close(s.Done)
 	}
 }
 
 // Handle the closing of control channel.
 func (s *Session) handleclose() func() {
 	return func() {
-		s.close(true)
+		s.close(true, true)
 	}
 }
