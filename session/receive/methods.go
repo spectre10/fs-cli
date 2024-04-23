@@ -50,7 +50,7 @@ func (s *Session) transfer() {
 		// mpb.WithWidth(60),
 		mpb.WithRefreshRate(100 * time.Millisecond), //updates the stats every 100ms.
 	)
-	s.globalStartTime = lib.Start()
+	s.GlobalStartTime = lib.Start()
 	wg := &sync.WaitGroup{}
 	wg.Add(int(s.channelsCnt))
 	for i := 0; i < int(s.channelsCnt); i++ {
@@ -104,7 +104,7 @@ func (s *Session) transfer() {
 		fileSize += s.Channels[i].Size
 	}
 
-	lib.FinalStat(fileSize, s.globalStartTime)
+	lib.FinalStat(fileSize, s.GlobalStartTime)
 
 	//signal to the sender to close the connection.
 	err := s.controlChannel.SendText("1")

@@ -25,7 +25,7 @@ type Session struct {
 	ConsentInput  chan byte
 	MetadataReady chan struct{} //when metadata is received.
 
-	globalStartTime int64 //start time of the transaction
+	GlobalStartTime int64 //start time of the transaction
 }
 
 // Constructs new session object and returns it with some default values.
