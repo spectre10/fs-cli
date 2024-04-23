@@ -33,7 +33,7 @@ func (s *Session) CreateConnection() error {
 }
 
 // Connects the clients and starts the process of writing to the file.
-func (s *Session) Connect() error {
+func (s *Session) Connect() {
 	<-s.consentChan
 
 	//wait for all the channels to be initialized.
@@ -41,7 +41,6 @@ func (s *Session) Connect() error {
 
 	go s.transfer()
 	<-s.done
-	return nil
 }
 
 func (s *Session) transfer() {
