@@ -33,7 +33,7 @@ func (s *Session) CreateConnection() error {
 }
 
 // Connects the clients and starts the process of writing to the file.
-func (s *Session) Connect(offer webrtc.SessionDescription) error {
+func (s *Session) Connect() error {
 	<-s.consentChan
 
 	//wait for all the channels to be initialized.

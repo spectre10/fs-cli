@@ -44,7 +44,7 @@ var receiveCmd = &cobra.Command{
 		session.ConsentInput <- consent
 		fmt.Println()
 
-		err = session.Connect(answer)
+		err = session.Connect()
 		return err
 	},
 }
