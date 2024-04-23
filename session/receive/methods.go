@@ -104,8 +104,15 @@ func (s *Session) transfer() {
 		fileSize += s.Channels[i].Size
 	}
 
-	lib.FinalStat(fileSize, s.GlobalStartTime)
-
+	t, amount, speed := lib.GetStats(fileSize, s.GlobalStartTime)
+	s.TimeTakenSeconds = t
+	s.AverageSpeedMiB = speed
+	s.TotalAmountTransferred = fmt.Sprintf("% .2f", amount)
+	s.StatsDone <- struct{}{}
+	fmt.Printf("\nStats:\n")
+	fmt.Printf("Time Taken: %.2f seconds\n", t)
+	fmt.Printf("Total Amount Transferred: % .2f \n", amount)
+	fmt.Printf("Average Speed: %.2f MiB/s\n", speed)
 	//signal to the sender to close the connection.
 	err := s.controlChannel.SendText("1")
 	if err != nil {

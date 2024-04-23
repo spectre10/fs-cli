@@ -17,7 +17,6 @@ func (s *Session) HandleState() {
 	s.PeerConnection.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
 		if state == webrtc.ICEConnectionStateFailed {
 			fmt.Printf("\nICE Connection State has changed: %s\n\n", state.String())
-			s.done <- struct{}{}
 			return
 		}
 

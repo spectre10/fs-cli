@@ -25,7 +25,12 @@ type Session struct {
 	ConsentInput  chan byte
 	MetadataReady chan struct{} //when metadata is received.
 
+	// stats at the end
 	GlobalStartTime int64 //start time of the transaction
+	TimeTakenSeconds       float64
+	AverageSpeedMiB        float64
+	TotalAmountTransferred string
+	StatsDone              chan struct{}
 }
 
 // Constructs new session object and returns it with some default values.
@@ -41,5 +46,6 @@ func NewSession() *Session {
 		}, 0),
 		channelsDone: 0,
 		channelsChan: make(chan struct{}, 1),
+		StatsDone:    make(chan struct{}, 1),
 	}
 }
